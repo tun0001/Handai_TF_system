@@ -62,4 +62,4 @@ jobs:
         run: |
           git add .
           git commit -m "📝 Update files via GitHub Actions" || echo "No changes to commit"
-          git push
+          git push origin main
