@@ -113,7 +113,7 @@ def main():
                     data = {
                         "content":
                             f"**{conference_name}**\n"
-                            f"種目: {row['種目']} {row['種別']} {row['レース区分']}\n"
+                            #f"種目: {row['種目']} {row['種別']} {row['レース区分']}\n"
                             + "\n".join(
                                 f"{col}: {df_result.iloc[0][col]}"
                                 for col in df_result.columns
