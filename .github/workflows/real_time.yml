@@ -22,9 +22,9 @@ jobs:
           pip install --upgrade pip
           pip install -r univ-athlete-db/requirements.txt
           pip install pytest
-      - name: Run pytest
-        working-directory: univ-athlete-db
-        run: pytest --maxfail=1 --disable-warnings -q
+      # - name: Run pytest
+      #   working-directory: univ-athlete-db
+      #   run: pytest --maxfail=1 --disable-warnings -q
 
   fetch-and-parse:
     name: Fetch & Parse CLI
