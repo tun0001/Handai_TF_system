@@ -1,5 +1,5 @@
 import requests
-from scraper.parser import find_university_link_and_count,parse_results_from_univ,parse_event_detail_for_player_track
+from scraper.parser import find_university_link_and_count,parse_results_from_univ, parse_event_detail_track
 from urllib.parse import urljoin, urlparse
 import pandas as pd
 import argparse
@@ -62,7 +62,7 @@ def fetch_url_univ(url,univ):
         for u in urls:
             html_ev = fetch_html(u)
             print(player_name, u)
-            detail = parse_event_detail_for_player_track(html_ev, player_name=player_name)
+            detail = parse_event_detail_track(html_ev, player_name=player_name)
             print(detail)
             details.append(detail)
 

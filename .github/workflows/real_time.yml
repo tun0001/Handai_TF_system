@@ -1,0 +1,52 @@
+name: Real-time Fetch and Parse Workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  schedule:
+    - cron: '*/10 * * * *'  # 10分ごとに実行
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r univ-athlete-db/requirements.txt
+          pip install pytest
+      - name: Run pytest
+        working-directory: univ-athlete-db
+        run: pytest --maxfail=1 --disable-warnings -q
+
+  fetch-and-parse:
+    name: Fetch & Parse CLI
+    runs-on: ubuntu-latest
+    needs: test
+    env:
+      URL: https://iuau.jp/ev2025/94ic/res/tt.html
+      UNIV: 大阪大
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r univ-athlete-db/requirements.txt
+      - name: Run CLI real time
+        working-directory: univ-athlete-db
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          python src/cli_real_time.py "${URL}" "${UNIV}"

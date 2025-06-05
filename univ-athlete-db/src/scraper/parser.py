@@ -13,13 +13,15 @@ from bs4 import BeautifulSoup
 def parse_event_finish(html, event_name, betsu, kubun):
     """
     指定した種目(event_name)、種別(betsu)、レース区分(kubun)の全行が
-    「状況」列で '結果' になっているかを返す。
+    「状況」列で '結果' になっているかを返す。htmlsはリンクを返す．
     """
     soup = BeautifulSoup(html, 'html.parser')
     found = False
+    htmls = []
+
     for table in soup.find_all('table'):
         #print(table)
-        #print(table.get_text(strip=True))
+        #print(table.get_text(strip=True),"\n")
         header = table.find('tr')
         if not header:
             continue
@@ -32,21 +34,41 @@ def parse_event_finish(html, event_name, betsu, kubun):
         idx_betsu    = cols.index('種別')
         idx_division = cols.index('レース区分')
         idx_status   = cols.index('状況')
+        #print(cols)
         #print(idx_betsu)
         #print(cols)
 
-        statuses = []
+        #statuses = []
+        
         cur_name = cur_bet = cur_div = None
         for row in table.find_all('tr')[1:]:
             # colspan を考慮して列位置を再構築
+            #print(row)
             row_cells = []
             for td in row.find_all('td'):
                 text = td.get_text(strip=True)
                 span = int(td.get('colspan', 1))
                 row_cells.extend([text] * span)
             # Status 列が存在しなければスキップ
+
             if idx_status >= len(row_cells):
+                if found:
+                    if row_cells[-1]=='結果':
+                        a_tag = row.find('a', href=True)
+                        if a_tag:
+                            href = a_tag['href']
+                            htmls.append(href)
+                            #print(htmls)
+                        else:
+                            htmls.append(None)  # または何もしない
+                    else:
+                        htmls=[]
+                        found=False
+                #print("---",row_cells)
                 continue
+            elif found:
+                return found,htmls
+            #print(row_cells)
             # rowspan の継承: 空文字出現時は前行の値を使用
             if idx_event < len(row_cells) and row_cells[idx_event]:
                 cur_name = row_cells[idx_event]
@@ -56,15 +78,118 @@ def parse_event_finish(html, event_name, betsu, kubun):
                 cur_div = row_cells[idx_division]
             # 該当条件なら status を記録
             if cur_name == event_name and cur_bet == betsu and cur_div == kubun:
-                #print(f"Found: {cur_name}, {cur_bet}, {cur_div},{row_cells}")
-                statuses.append(row_cells[idx_status])
+                #print(row_cells)
+                if row_cells[-1]=='結果':
+                    a_tag = row.find('a', href=True)
+                    found = True
+                    #print(row)
+                    if a_tag:
+                        href = a_tag['href']
+                        htmls.append(href)
+                        #print(htmls)
+                    else:
+                        htmls.append(None)  # または何もしない
+                #statuses.append(row_cells[idx_status])
         # 見つかった行があれば判定
-        if statuses:
-            found = True
-            if any(s != '結果' for s in statuses):
-                return False
+        # if statuses:
+        #     found = True
+        #     htmls.extend(htmls_mid)
+        #     print(statuses)
+        #     if any(s != '結果' for s in statuses):
+        #         return False,htmls
     # 一度でも該当行があり、すべて「結果」なら True
-    return found
+    #print(htmls)
+    return found,htmls
+
+def parse_event_detail(html, player_name=None, univ=None):
+    """
+    競技ページ(HTML)から指定選手(player_name)または大学名(univ)のレース情報を取得して辞書で返す
+    テーブルのカラム名に依存せず、カラム名と値のペアで辞書化する
+    colspanによるカラムずれも考慮
+    """
+    soup = BeautifulSoup(html, 'html.parser')
+    # 大会情報
+    title_h3 = soup.find('table', class_='title').find('h3').get_text(separator=' ', strip=True)
+    # 日付
+    p = soup.find('p', class_='h3-align')
+    date_text = p.find(text=True).strip() if p else ''
+    # 競技とラウンド
+    h1 = soup.find('h1').get_text(strip=True)
+    comps = h1.rsplit(' ', 1)
+    competition = comps[0]
+    round_ = comps[1] if len(comps) > 1 else ''
+    # 風速と結果テーブル取得
+    wind_div = soup.find('div', class_='wind')
+    if wind_div:
+        wind = wind_div.get_text(strip=True).replace('風:', '')
+        table = wind_div.find_next_sibling('table')
+    else:
+        wind = ''
+        anchor = soup.find('a', attrs={'name': 'CONTENTS'})
+        table = anchor.find_next_sibling('table') if anchor else soup.find('table')
+
+    # ヘッダー取得（colspan考慮）
+    header_row = table.find('tr')
+    headers = []
+    for th in header_row.find_all('th'):
+        text = th.get_text(strip=True)
+        span = int(th.get('colspan', 1))
+        # colspanが2なら同じカラム名を2回追加
+        headers.extend([text] * span)
+
+    results = []
+    for row in table.find_all('tr')[1:]:
+        cols = []
+        for td in row.find_all('td'):
+            text = td.get_text(strip=True)
+            span = int(td.get('colspan', 1))
+            cols.extend([text] * span)
+        if not cols or len(cols) < len(headers):
+            continue
+        header_count = {}
+        unique_headers = []
+        for h in headers:
+            if h not in header_count:
+                header_count[h] = 1
+                unique_headers.append(h)
+            else:
+                header_count[h] += 1
+                unique_headers.append(f"{h}_{header_count[h]}")
+
+        row_dict = {unique_headers[i]: cols[i] for i in range(len(unique_headers))}
+        # ヘッダーに同じ名前が複数ある場合、最初に出現したカラムだけを使う
+        # row_dict = {}
+        # for i in range(len(headers)):
+        #     if headers[i] not in row_dict:
+        #         row_dict[headers[i]] = cols[i]
+        #
+        # print(row_dict)
+        # player_name, univ のどちらか一方でも一致すればOK
+        name_val = row_dict.get('氏名', row_dict.get('選手名', ''))
+        univ_val = (
+            row_dict.get('所属') or
+            row_dict.get('大学名') or
+            row_dict.get('チーム／メンバー', '')
+        )
+        match_player = player_name is not None and player_name in name_val
+        match_univ = univ is not None and univ_val.startswith(univ)
+        # match_player = player_name is not None and row_dict.get('氏名', row_dict.get('選手名', '')) == player_name
+        # match_univ = univ is not None and row_dict.get('所属', row_dict.get('大学名', '')) == univ
+        if (player_name and match_player) or (univ and match_univ):
+            # 共通情報も付与
+            row_dict.update({
+                '大会': title_h3,
+                '日付': date_text,
+                '競技': competition,
+                'ラウンド': round_,
+                '風': wind
+            })
+            results.append(row_dict)
+    if not results:
+        return None
+    if player_name:
+        return results[0]
+    return results
 
 def parse_conference_title(html):
     """
@@ -126,10 +251,11 @@ def parse_all_event_name_kyougi_itiran(html):
     # テーブルごとに1件ずつ、重複を気にせず返す
     return events
 
-def parse_event_detail_for_player_track(html, player_name):
+def parse_event_detail_track(html, player_name=None, univ=None):
     """
-    競技ページ(HTML)から指定選手(player_name)のレース情報を取得して辞書で返す
+    競技ページ(HTML)から指定選手(player_name)または大学名(univ)のレース情報を取得して辞書で返す
     取得項目: 順位、大会, 日付, 競技, ラウンド, 選手名, 記録, 風，コメント
+    player_name, univ のどちらか一方または両方を指定可能
     """
     soup = BeautifulSoup(html, 'html.parser')
     # 大会情報
@@ -139,7 +265,6 @@ def parse_event_detail_for_player_track(html, player_name):
     if not p:
         date_text = ''
     else:
-        # 最初に現れる文字列を取得（改行や余白を除去）
         date_text = p.find(text=True).strip()
 
     # 競技とラウンド（<h1>を分割）
@@ -153,23 +278,25 @@ def parse_event_detail_for_player_track(html, player_name):
         wind = wind_div.get_text(strip=True).replace('風:', '')
         table = wind_div.find_next_sibling('table')
     else:
-        # 風速情報がない場合
         wind = ''
-        # <a name="CONTENTS"> の次にある<table>を結果テーブルとみなす
         anchor = soup.find('a', attrs={'name': 'CONTENTS'})
         table = anchor.find_next_sibling('table') if anchor else soup.find('table')
-    # カラムインデックス: [順位, レーン, No., 氏名(JP), 氏名(EN), 所属, 記録, コメント]
+
+    results = []
     for row in table.find_all('tr')[1:]:
         cols = row.find_all('td')
         if not cols:
             continue
-        # 順位を取得
         rank = cols[0].get_text(strip=True)
         name_jp = cols[3].get_text(strip=True)
-        if name_jp == player_name:
-            record = cols[6].get_text(strip=True)
-            comment = cols[7].get_text(strip=True)
-            return {
+        univ_name = cols[5].get_text(strip=True)
+        record = cols[6].get_text(strip=True)
+        comment = cols[7].get_text(strip=True)
+        # player_name, univ のどちらか一方でも一致すればOK
+        match_player = player_name is not None and name_jp == player_name
+        match_univ = univ is not None and univ_name == univ
+        if (player_name and match_player) or (univ and match_univ):
+            results.append({
                 '順位': rank,
                 '大会': title_h3,
                 '日付': date_text,
@@ -178,9 +305,15 @@ def parse_event_detail_for_player_track(html, player_name):
                 '選手名': name_jp,
                 '記録': record,
                 'コメント': comment,
-                '風': wind
-            }
-    raise ValueError(f"選手 '{player_name}' の結果が見つかりません")
+                '風': wind,
+                '所属': univ_name
+            })
+    if not results:
+        raise ValueError(f"該当する選手/大学の結果が見つかりません")
+    # player_name指定時は1件だけ返す（従来互換）
+    if player_name:
+        return results[0]
+    return results  # univ指定時はリストで返す
 
 def parse_results_from_univ(html, university_name):
     """

@@ -5,6 +5,8 @@ from scraper.parser import *
 from urllib.parse import urljoin, urlparse
 import pandas as pd
 from pathlib import Path
+import requests
+import os
 """
 以下は一般的なプロジェクト構成における　cli.py　と　config.py　の役割です。
 
@@ -46,7 +48,8 @@ def main():
     
     # プロジェクトルートから database/realtime フォルダを指す
     realtime_dir = Path(__file__).parent.parent / 'database' / 'realtime'
-    
+    # Webhook URL を環境変数から取得（または直書きしてもOK）
+    WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
     """
     1.url->htmlを取得
     2.大会名を取得
@@ -68,6 +71,7 @@ def main():
 
     conference_dir = realtime_dir / conference_name
     status_path = conference_dir / "event_status.json"
+    results_path = conference_dir / "results.json"
     #----------------------------------------------------
     if not conference_dir.exists():
         df_status= pd.DataFrame(events_name)
@@ -75,28 +79,59 @@ def main():
         print(df_status)
         conference_dir.mkdir(parents=True, exist_ok=True)
         df_status.to_json(str(status_path), orient="records", lines=True)
+        df_results= pd.DataFrame([])
         print(f"大会フォルダを作成しました: {conference_dir}")
     
     else:
         df_status = pd.read_json(str(status_path), orient="records", lines=True)
+        df_results=pd.read_json(str(results_path), orient="records", lines=True)
+
         print(df_status)
     #----------------------------------------------------
     df_peding= df_status[df_status["status"] == "未完了"]
+    
     for index, row in df_peding.iterrows():
         #まず，種目の完了を判断
-        if parse_event_finish(html=html, 
+        finish,urls=parse_event_finish(html=html, 
                            event_name=row["種目"], 
                            kubun=row["レース区分"],
-                           betsu=row["種別"]):
-            print("種目:", row["種目"],row["種別"],row["レース区分"])
+                           betsu=row["種別"])
+        if finish:
+            print("種目:", row["種目"],row["種別"],row["レース区分"],urls,finish)
+            for url in urls:
+                #種目のURLを取得
+                print("種目のURL:", url)
+                event_url = urljoin(base_url, url)
+                #大学名で探索して，速報を取得．
+                html_event= fetch_html(event_url)
+                #種目の詳細を取得
+                result=parse_event_detail(html_event,player_name=None,univ=univ)
+                if result is not None:
+                    df_result=pd.DataFrame(result)
+                    print(df_result)
+                    df_results = pd.concat([df_results, df_result], ignore_index=True)
+                    data = {
+                        "content": df_result.to_json(orient="records", force_ascii=False)
+                    }
+
+                    response = requests.post(WEBHOOK_URL, json=data)
+                    if response.status_code == 204:
+                        print("✅ 送信成功")
+                    else:
+                        print("❌ エラー:", response.text)
+                #print(result)
+                #データベースに保存する
+                #save_results(result)  # データベース保存関数は実装されていると仮定
             #終わってたら，データをとる．競技タイプ毎にとる
             #ROWの種目,レース区分,種別をもとにHTMLを取得
             #大学名で探索して，速報を取得．
             #---------------------------------------------------
             # リアルタイム情報を取得
             df_status.at[index, "status"] = "完了"
-        df_status.to_json(str(status_path), orient="records", lines=True)
+            df_status.to_json(str(status_path), orient="records", lines=True)
+            df_results.to_json(str(results_path), orient="records", lines=True)
         #---------------------------------------------------
+    print(df_results)
 
 
 
