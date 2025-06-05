@@ -111,7 +111,8 @@ def main():
                     print(df_result)
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
                     data = {
-                        "content": df_result.to_json(orient="records", force_ascii=False)
+                        #"content": df_result.to_json(orient="records", force_ascii=False)
+                        "content": df_result
                     }
 
                     response = requests.post(WEBHOOK_URL, json=data)
