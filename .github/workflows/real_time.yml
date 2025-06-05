@@ -7,6 +7,9 @@ on:
   schedule:
     - cron: '*/10 * * * *'  # 10分ごとに実行
 
+permissions:
+  contents: write  # リポジトリへの書き込みを許可
+
 jobs:
   test:
     name: Run Tests
@@ -50,3 +53,13 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           python src/cli_real_time.py "${URL}" "${UNIV}"
+      - name: Git設定
+        run: |
+          git config user.name "tun001"
+          git config user.email "tune05155@gmail.com"
+
+      - name: 変更をコミット＆プッシュ
+        run: |
+          git add .
+          git commit -m "📝 Update files via GitHub Actions" || echo "No changes to commit"
+          git push
