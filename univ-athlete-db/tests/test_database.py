@@ -1,13 +1,18 @@
 import unittest
+import sys
+import os
+
+# srcディレクトリをPythonのパスに追加
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
 from src.database.db import Database
 from src.database.models import Athlete, Event
 
 class TestDatabase(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.db = Database()
-        cls.db.connect(':memory:')  # Use an in-memory database for testing
+        cls.db.connect(':memory:')  # テスト用インメモリDB
         cls.db.create_tables()
 
     def test_insert_athlete(self):
