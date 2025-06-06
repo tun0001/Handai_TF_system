@@ -51,7 +51,7 @@ def main():
     # プロジェクトルートから database/realtime フォルダを指す
     realtime_dir = Path(__file__).parent.parent / 'database' / 'realtime'
     # Webhook URL を環境変数から取得（または直書きしてもOK）
-    WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
+    #WEBHOOK_URL = os.environ["DISCORD_WEBHOOK"]
     """
     1.url->htmlを取得
     2.大会名を取得
@@ -132,7 +132,7 @@ def main():
                         content=content
                     ))
                 else:
-                    
+
                     print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
     #---------------------------------------------------
     print(df_results)
