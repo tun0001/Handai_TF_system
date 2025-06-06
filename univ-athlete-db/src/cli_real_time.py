@@ -108,8 +108,9 @@ def main():
                 html_event= fetch_html(event_url)
                 #種目の詳細を取得
                 result=parse_event_detail(html_event,player_name=None,univ=univ)
+                df_result=pd.DataFrame(result)
                 if result is not None:
-                    df_result=pd.DataFrame(result)
+                    #df_result=pd.DataFrame(result)
                     print(df_result)
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
 
