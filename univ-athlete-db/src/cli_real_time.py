@@ -7,6 +7,8 @@ import pandas as pd
 from pathlib import Path
 import requests
 import os
+import asyncio
+from discord_poster import send_to_thread
 """
 以下は一般的なプロジェクト構成における　cli.py　と　config.py　の役割です。
 
@@ -110,33 +112,27 @@ def main():
                     df_result=pd.DataFrame(result)
                     print(df_result)
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
-                    data = {
-                        "content":
-                            f"**{conference_name}**\n"
-                            #f"種目: {row['種目']} {row['種別']} {row['レース区分']}\n"
-                            + "\n".join(
-                                f"{col}: {df_result.iloc[0][col]}"
-                                for col in df_result.columns
-                            )
-                    }
 
-                    response = requests.post(WEBHOOK_URL, json=data)
-                    if response.status_code == 204:
-                        print("✅ 送信成功")
-                    else:
-                        print("❌ エラー:", response.text)
-                #print(result)
-                #データベースに保存する
-                #save_results(result)  # データベース保存関数は実装されていると仮定
-            #終わってたら，データをとる．競技タイプ毎にとる
-            #ROWの種目,レース区分,種別をもとにHTMLを取得
-            #大学名で探索して，速報を取得．
-            #---------------------------------------------------
-            # リアルタイム情報を取得
-            df_status.at[index, "status"] = "完了"
-            df_status.to_json(str(status_path), orient="records", lines=True)
-            df_results.to_json(str(results_path), orient="records", lines=True)
-        #---------------------------------------------------
+    # ─── Discord へ結果をポスト ─────────────────────────────────────
+                if not df_result.empty:
+                    # content: DataFrame を見やすい文字列に変換
+                    content = df_result.to_string(index=False)
+                    # thread_name: 大会名をスレッド名に
+                    thread_name = conference_name
+                    # channel_id, token は環境変数から取得
+                    channel_id = int(os.environ["DISCORD_CHANNEL_ID"])
+                    token = os.environ["DISCORD_BOT_TOKEN"]
+                    print(f"▶️ Discord に投稿: channel={channel_id}, thread={thread_name}")
+                    # 非同期関数を実行
+                    asyncio.run(send_to_thread(
+                        token=token,
+                        channel_id=channel_id,
+                        thread_name=thread_name,
+                        content=content
+                    ))
+                else:
+                    print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
+    #---------------------------------------------------
     print(df_results)
 
 
