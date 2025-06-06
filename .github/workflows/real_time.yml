@@ -5,10 +5,10 @@ on:
     branches: [ main ]
   pull_request:
   schedule:
-    - cron: '*/10 * * * *'  # 10分ごとに実行
+    - cron: '*/10 * * * *'
 
 permissions:
-  contents: write  # リポジトリへの書き込みを許可
+  contents: write
 
 jobs:
   test:
@@ -36,7 +36,8 @@ jobs:
     env:
       URL: https://iuau.jp/ev2025/94ic/res/tt.html
       UNIV: 大阪大
-      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+      DISCORD_BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.x
@@ -50,15 +51,17 @@ jobs:
       - name: Run CLI real time
         working-directory: univ-athlete-db
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          URL:               ${{ env.URL }}
+          UNIV:              ${{ env.UNIV }}
+          DISCORD_CHANNEL_ID: ${{ env.DISCORD_CHANNEL_ID }}
+          DISCORD_BOT_TOKEN:  ${{ env.DISCORD_BOT_TOKEN }}
         run: |
           python src/cli_real_time.py "${URL}" "${UNIV}"
       - name: Git status
         run: |
           git config user.name "tun001"
           git config user.email "tune05155@gmail.com"
-
-      - name: commit and push changes
+      - name: Commit and push changes
         run: |
           git add .
           git commit -m "📝 Update files via GitHub Actions" || echo "No changes to commit"
