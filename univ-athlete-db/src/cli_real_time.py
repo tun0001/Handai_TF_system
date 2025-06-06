@@ -144,7 +144,7 @@ def main():
                     print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
     #---------------------------------------------------
     print(df_results)
-    df_results.to_json(str(status_path), orient="records", lines=True)
+    df_results.to_json(str(results_path), orient="records", lines=True)
     
 
 
