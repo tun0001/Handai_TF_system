@@ -87,9 +87,9 @@ def main():
     
     else:
         df_status = pd.read_json(str(status_path), orient="records", lines=True)
-        #df_results=pd.read_json(str(results_path), orient="records", lines=True)
-        df_results= pd.DataFrame([])
-        print(df_status)
+        df_results=pd.read_json(str(results_path), orient="records", lines=True)
+        #df_results= pd.DataFrame([])
+        #print(df_status)
     #----------------------------------------------------
     df_peding= df_status[df_status["status"] == "未完了"]
     
