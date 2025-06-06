@@ -117,10 +117,14 @@ def main():
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────
                 if not df_result.empty:
-                    # content: DataFrame をコードブロック付き＆改行入りで整形
-                    text = df_result.to_string(index=False)
-                    # Discord で見やすいようにバッククォートで囲む
-                    content = "```csv\n" + text + "\n```"
+                    # content: 各列名:値 形式で整形
+                    lines = []
+                    for _, row in df_result.iterrows():
+                        for col in df_result.columns:
+                            lines.append(f"{col}: {row[col]}")
+                        lines.append("")  # 行間を空ける
+                    # コードブロックで囲んで Discord に送信
+                    content = "```text\n" + "\n".join(lines) + "```"
                     # thread_name: 大会名をスレッド名に
                     thread_name = conference_name
                     # channel_id, token は環境変数から取得
