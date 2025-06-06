@@ -74,6 +74,7 @@ def main():
     conference_dir = realtime_dir / conference_name
     status_path = conference_dir / "event_status.json"
     results_path = conference_dir / "results.json"
+    df_results= pd.DataFrame([])
     #----------------------------------------------------
     if not conference_dir.exists():
         df_status= pd.DataFrame(events_name)
@@ -143,6 +144,8 @@ def main():
                     print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
     #---------------------------------------------------
     print(df_results)
+    df_results.to_json(str(status_path), orient="records", lines=True)
+    
 
 
 
