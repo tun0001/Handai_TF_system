@@ -112,12 +112,15 @@ def main():
                 if result is not None:
                     #df_result=pd.DataFrame(result)
                     print(df_result)
+                    df_status.at[index, "status"] = "完了"
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────
                 if not df_result.empty:
-                    # content: DataFrame を見やすい文字列に変換
-                    content = df_result.to_string(index=False)
+                    # content: DataFrame をコードブロック付き＆改行入りで整形
+                    text = df_result.to_string(index=False)
+                    # Discord で見やすいようにバッククォートで囲む
+                    content = "```csv\n" + text + "\n```"
                     # thread_name: 大会名をスレッド名に
                     thread_name = conference_name
                     # channel_id, token は環境変数から取得
