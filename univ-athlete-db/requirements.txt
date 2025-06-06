@@ -3,3 +3,4 @@ beautifulsoup4
 sqlalchemy
 pandas
 pytest
+discord.py
