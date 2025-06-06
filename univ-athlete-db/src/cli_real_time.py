@@ -132,6 +132,7 @@ def main():
                         content=content
                     ))
                 else:
+                    
                     print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
     #---------------------------------------------------
     print(df_results)
