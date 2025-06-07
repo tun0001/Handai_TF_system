@@ -110,10 +110,10 @@ def main():
                 #種目の詳細を取得
                 result=parse_event_detail(html_event,player_name=None,univ=univ)
                 df_result=pd.DataFrame(result)
+                df_status.at[index, "status"] = "完了"
                 if result is not None:
                     #df_result=pd.DataFrame(result)
                     print(df_result)
-                    df_status.at[index, "status"] = "完了"
                     print(df_status.at[index, "status"])
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
 
