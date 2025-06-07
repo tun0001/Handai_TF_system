@@ -114,7 +114,7 @@ def main():
                     #df_result=pd.DataFrame(result)
                     print(df_result)
                     df_status.at[index, "status"] = "完了"
-                    print（df_status.at[index, "status"]）
+                    print(df_status.at[index, "status"]）
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────
