@@ -114,6 +114,7 @@ def main():
                     #df_result=pd.DataFrame(result)
                     print(df_result)
                     df_status.at[index, "status"] = "完了"
+                    print（df_status.at[index, "status"]）
                     df_results = pd.concat([df_results, df_result], ignore_index=True)
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────
@@ -144,6 +145,7 @@ def main():
                     print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
     #---------------------------------------------------
     print(df_results)
+    df_status.to_json(str(status_path), orient="records", lines=True)
     df_results.to_json(str(results_path), orient="records", lines=True)
     
 
