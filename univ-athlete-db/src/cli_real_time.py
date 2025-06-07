@@ -101,6 +101,7 @@ def main():
                            betsu=row["種別"])
         if finish:
             print("種目:", row["種目"],row["種別"],row["レース区分"],urls,finish)
+            df_status.at[index, "status"] = "完了"
             for url in urls:
                 #種目のURLを取得
                 print("種目のURL:", url)
@@ -110,7 +111,6 @@ def main():
                 #種目の詳細を取得
                 result=parse_event_detail(html_event,player_name=None,univ=univ)
                 df_result=pd.DataFrame(result)
-                df_status.at[index, "status"] = "完了"
                 if result is not None:
                     #df_result=pd.DataFrame(result)
                     print(df_result)
