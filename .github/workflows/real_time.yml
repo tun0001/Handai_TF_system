@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     env:
-      URL1: https://iuau.jp/ev2025/94ic/res/tt.html
+      URL1: https://gold.jaic.org/icaak/record/2025/4_KSIC/kyougi.html
       URL2: https://www.oaaa.jp/results/r_25/kanjitsu/kyougi.html
       UNIV: 大阪大
       DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
