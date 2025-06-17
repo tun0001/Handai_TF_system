@@ -21,17 +21,15 @@ def main():
         # 直接コードにベタ書きした dict を使う場合
 
     # 認証スコープ
-    
+
     scope = ['https://www.googleapis.com/auth/spreadsheets']
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
 
     # スプレッドシートを開く
-    #SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID')
-    #SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID_CONFERENCE')
-    SPREADSHEET_ID_CONFERENCE = '1yAI2wwNWBWdWfrbaiXA5EvjuKoHCztwjAnUYRkNNbPw'
-    SPREADSHEET_ID_MEMBER = '1vN-qqu4RB-Ukp2tR5WDQJB9P-uRPgGp3L6MDz2XfPAE'
-
+    SPREADSHEET_ID_MEMBER = os.getenv('SPREADSHEET_ID_MEMBER')
+    SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID_CONFERENCE')
+    
     worksheet_conference = client.open_by_key(SPREADSHEET_ID_CONFERENCE).sheet1
     worksheet_member = client.open_by_key(SPREADSHEET_ID_MEMBER).sheet1
     
