@@ -15,25 +15,10 @@ def main():
     # Secrets から読み込んだ JSON をデコード
     # creds_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
     creds_env = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-    if creds_env:
-        # 環境変数から取得した場合は文字列 → dict に変換
-        creds_str = creds_env.replace('\\n', '\n')
-        creds_dict = json.loads(creds_str)
-    else:
+    # 環境変数から取得した場合は文字列 → dict に変換
+    creds_str = creds_env.replace('\\n', '\n')
+    creds_dict = json.loads(creds_str)
         # 直接コードにベタ書きした dict を使う場合
-        creds_dict = {
-        "type": "service_account",
-        "project_id": "handai-tf-system-control",
-        "private_key_id": "84baef150cf69ec1717ce0c09247bfb9e68b9c70",
-        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDuRzcBivFgxMw3\n7Tw60ErUEWoRqfSAgzQDqP9UohnpwMQnF+7F9/ZydQEAAJbQ5+N2PRIG2kuzs0+N\nd7Cetoz1zZ4TMUFLq9eIKbN55Rk+eMl8UWd1Y+1sVqo2nkL7V1S4rbd0bboiLlSb\ns71qW7hUDYRu6y3ydKSZG+OwZipo56EeDZoE67wO7XIIo8gC5fi6y6L0TUjzBPaU\n2/nkAJ0ashK8o8ZMBkqxyGrjOQON5mdWnMx28/huVyycS8qESiRUdi1wBja5va43\nAVwm3J1Fo/mR1PiuGgPFMw3TN8IzL4EPrgj+Xvurg6cVhxyf9soxVdTIgQfbKn8H\npPuA0nExAgMBAAECggEAJnR+LJ9mEvt/3UYfcnsmRcZ6YK0V+t2cjztUMIOpfJ+x\n0ytaIOoYBI3cjPRguAi3SDWqoJ9/bdoyVxRU1VsvMbEEYiLmClaKm3zmFyCXFo17\nhbbvjwhYYM6LJvMbaqFEA5AfAPPVK+oKmUcEpVMgfbQ2xjM/auynRIHgmRn2neT1\noeAEm7FLtMXY4XljH8zogGdfCumNIexKtjSy79jEAt7cjnhvl0OAuJVsnbUCxYjO\nJXv3NV1cIG5gib682T70FTGgsKm5+4Gcuj5nKyOeVOzWQvdh0J6S+x/jsuDfG4oU\n7JaKoVcnNnwNRwsM1NcVc2V1U1sJH/WT/wSnVWQd3wKBgQD9sX6FRlyBLDIuLFz5\nnQOqFzrq0sUpV1E/h5Rt0AnJz9sqIhzsPeglCPW3IoecCsuNuoRVmuxyykNR9544\nKTlPEvSmbzviPmjiQfPisBpOYUElNFZ+cKs02jZclVze/EHMIj9x7HCVlrHezoGW\n51uThhzSuhmW1P4TMYK+3utNVwKBgQDwcdb7pNhhaZkaB0fDkf6mkF3eSA7VOOyG\nuZSqTKYQinhuQNPXvBzlnjffmEP1iP8k9RYakgASTXXBXQpCD1QizjKjQxlKoRMo\nhjdPE/KtHNNIvfaKuxb7cbNjIRx7/cpxUF/EntjjaNYxdPsTz/sv1OyQGdwg8iHB\nqTQoytIYtwKBgQCOBdzPnalRwz1AbiOKtiUEBsc8CMzJrRFWIH+uzkV8jnmiZ8CL\nXMjmWtK8OH90kvKLoHxPNFDknmj7rUUNKb7kjrcZqbH7oXa0G7n+ERpZAMcondlC\nJa8jAnpmcFOyncP0FMQx8ezBQcDH/BG+Oj0hJHZkXjzPHOQ0OIZ6dm+CNwKBgE0H\n65wLH9d1gTs5geBB8ZdjQO9pnnbpGb2/zsUQcVNzSUnpMvU2qvtVSQk1OvB6x2ML\nsd0pUSSL9GHScOrhBk9wSADOClhCamTdOvL2rRSQ24++bDHd5mr/7jyf6wQ+NpE+\n8q+HRGz2tUh69cVPKGYWjQNNhZx4diAZGUDIWa7ZAoGBAPnNnzde/OSdcaWkU0m8\nPcy6RJyxNcSHAsc9p6MpjKj0eNr9fZGGV2DFTI7WvmWm9JSRLPMNZPjrlU3XWm1G\nTiAQ5Kk4H5vX5sqTuG4w6mqtjmsSWoC71a9pSzgyh2PsSd2xSLvFnRR61WwdEhxF\nrM5LQsiKs5xJTZl0yZeWMCht\n-----END PRIVATE KEY-----\n",
-        "client_email": "edit-tf-schedule@handai-tf-system-control.iam.gserviceaccount.com",
-        "client_id": "115271653994163090816",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/edit-tf-schedule%40handai-tf-system-control.iam.gserviceaccount.com",
-        "universe_domain": "googleapis.com"
-        }
     
     # creds_json = creds_json.replace('\\n', '\n')
     # creds_dict = json.loads(creds_json)
@@ -45,7 +30,8 @@ def main():
     client = gspread.authorize(creds)
 
     # スプレッドシートを開く
-    #SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
+    #SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID')
+    #SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID_CONFERENCE')
     SPREADSHEET_ID_CONFERENCE = '1yAI2wwNWBWdWfrbaiXA5EvjuKoHCztwjAnUYRkNNbPw'
     SPREADSHEET_ID_MEMBER = '1vN-qqu4RB-Ukp2tR5WDQJB9P-uRPgGp3L6MDz2XfPAE'
 
