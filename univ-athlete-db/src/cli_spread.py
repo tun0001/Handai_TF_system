@@ -21,6 +21,7 @@ def main():
         # 直接コードにベタ書きした dict を使う場合
 
     # 認証スコープ
+    
     scope = ['https://www.googleapis.com/auth/spreadsheets']
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
