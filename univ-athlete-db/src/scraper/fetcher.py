@@ -1,8 +1,11 @@
 import requests
-from scraper.parser import find_university_link_and_count,parse_results_from_univ, parse_event_detail_track
+from scraper.parser import *
+#from parser import *
 from urllib.parse import urljoin, urlparse
 import pandas as pd
 import argparse
+import numpy as np
+import os
 
 """
 • fetcher  
@@ -12,6 +15,88 @@ import argparse
 
 ポイントは「fetcher は“どこから”取ってくるか」「parser は“どう読み解く”か」に専念させることです。これによりテストや保守がしやすくなります。
 """
+def check_url_exists(url):
+    try:
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+def find_competition_link(output_file="competition_urls.txt"):
+
+    year_list = ['20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
+    number_list = [str(i) for i in range(1, 31)]
+    middle_list = ['jaic/icaak']
+    comp_list = [
+        "OSIC",  # 大阪インカレ
+        "HYIC",  # 兵庫インカレ        
+        "OSICHYIC",  # 大阪兵庫インカレ
+        "HYIC%20OSIC",  # 大阪兵庫インカレ
+        "KYIC",  # 京都インカレ
+        "KSIC",  # 関西インカレ
+        "NIDAISEN",  # 二大戦
+        "GK1",  # 学連記録会1
+        "GK2",  # 学連記録会2
+        "KYOKA",  # 長距離強化記録会
+        "SYUMOKU",  # 種目別選手権
+        'ISE',  # 全日本駅伝予選会
+        'NEW',  # 関西新人
+        'KANJO',  # 関西女子駅伝
+        'TANGO',  # 丹後駅伝
+    ]
+    url_list = []
+    osaka="https://www.oaaa.jp/results/r_24/osk_champ/tt.html"
+    osaka_2="https://gold.jaic.org/osaka/2023/osk_champ/tt.html"
+    osaka_3="https://www.oaaa.jp/results/r_22/osk_champ/tt.html"
+    middle_osaka=["www.oaaa.jp/results","gold.jaic.org/osaka"]
+
+    hyougo_1="http://www.haaa.jp/2024/hyo/web/tt.html"
+    hyougo_2="http://www.haaa.jp/2022/hyo/web/tt.html"
+    
+    zennnihonn_innkare="https://iuau.jp/ev2024/93ic/res/tt.html"
+
+    # 既存のURLをセットとして読み込む
+    existing_urls = set()
+    if os.path.exists(output_file):
+        with open(output_file, "r", encoding="utf-8") as f:
+            for line in f:
+                existing_urls.add(line.strip())
+    print(existing_urls)
+    for year in year_list:
+        for number in number_list:
+            for middle in middle_list:
+                for comp in comp_list:
+                    url = f'https://gold.jaic.org/{middle}/record/20{year}/{number}_{comp}/tt.html'
+                    if url in existing_urls:
+                        continue  # 既に存在する場合はスキップ
+                    if check_url_exists(url):
+                        
+                        print(f"Competition found: {url}")
+                        url_list.append(url)
+                        existing_urls.add(url)  # 追加したURLもセットに入れる
+    for year in year_list:
+        for middle in middle_osaka:
+            urls = [
+                f'https://{middle}/r_{year}/osk_champ/tt.html',#大阪選手権
+                f'https://{middle}/20{year}/osk_champ/tt.html',# 大阪選手権
+                f"http://www.haaa.jp/20{year}/hyo/web/tt.html",#  # 兵庫選手権
+                f"https://iuau.jp/ev20{year}/{int(year)+69}ic/res/tt.html" # 全日本インカレ
+                ]
+            for url in urls:
+                if url in existing_urls:
+                    continue
+                if check_url_exists(url):
+                    
+                    print(f"Competition found: {url}")
+                    url_list.append(url)
+                    existing_urls.add(url)  # 追加したURLもセットに入れる
+
+    # ファイルに追記（重複なし）
+    if url_list:
+        with open(output_file, "a", encoding="utf-8") as f:
+            for url in url_list:
+                f.write(url + "\n")
+
 def get_base_url(url):
     """指定されたURLからベースURLを取得"""
     parsed_url = urlparse(url)
@@ -23,8 +108,9 @@ def fetch_html(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
-        encoding = response.apparent_encoding
-        return response.content.decode(encoding, errors='replace')
+        # 明示的に Shift_JIS としてデコード
+        response.encoding = 'shift_jis'
+        return response.text
     except requests.RequestException as e:
         raise RuntimeError(f"Error fetching data from {url}: {e}")
 
@@ -70,3 +156,8 @@ def fetch_url_univ(url,univ):
     #print(details)
     df_details = pd.DataFrame(details)
     print(df_details.head(20))
+
+if __name__ == "__main__":
+    # Fetch and process data
+    file="/workspaces/Handai_TF_system/univ-athlete-db/database/com_url.txt"
+    find_competition_link(file)
