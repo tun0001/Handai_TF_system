@@ -19,10 +19,6 @@ def main():
     creds_str = creds_env.replace('\\n', '\n')
     creds_dict = json.loads(creds_str)
         # 直接コードにベタ書きした dict を使う場合
-    
-    # creds_json = creds_json.replace('\\n', '\n')
-    # creds_dict = json.loads(creds_json)
-    # print(creds_json)
 
     # 認証スコープ
     scope = ['https://www.googleapis.com/auth/spreadsheets']
