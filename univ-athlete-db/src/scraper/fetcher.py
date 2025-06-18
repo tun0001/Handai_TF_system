@@ -18,7 +18,21 @@ import os
 def check_url_exists(url):
     try:
         response = requests.head(url, allow_redirects=True, timeout=5)
-        return response.status_code == 200
+        # 200: OK, 403: Forbidden, 405: Method Not Allowed も存在とみなす
+        if response.status_code in [200, 403, 405]:
+            # Content-Typeがtext/htmlならTrue
+            content_type = response.headers.get('Content-Type', '')
+            if 'text/html' in content_type:
+                return True
+        # 一部サーバーはHEADを許可しないのでGETも試す
+        if response.status_code == 404:
+            return False
+        response = requests.get(url, allow_redirects=True, timeout=5)
+        if response.status_code in [200, 403]:
+            content_type = response.headers.get('Content-Type', '')
+            if 'text/html' in content_type:
+                return True
+        return False
     except requests.RequestException:
         return False
 
@@ -111,6 +125,12 @@ def fetch_html(url):
         # 明示的に Shift_JIS としてデコード
         response.encoding = 'shift_jis'
         return response.text
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 404:
+            print(f"Warning: 404 Not Found for url: {url}")
+            return None
+        else:
+            raise RuntimeError(f"Error fetching data from {url}: {e}")
     except requests.RequestException as e:
         raise RuntimeError(f"Error fetching data from {url}: {e}")
 

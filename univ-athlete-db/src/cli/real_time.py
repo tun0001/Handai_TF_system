@@ -17,6 +17,7 @@ import requests
 import os
 import asyncio
 from discord_poster import send_to_thread
+import time
 
 def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_member, creds_dict, announce_discord=True):
     """
@@ -28,6 +29,9 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
     
     # Get url and HTML ”競技別一覧表(開始時刻)"
     url_kyougi_betsu_itiran = urljoin(base_url, 'tt.html')
+    if check_url_exists(url_kyougi_betsu_itiran) is None:
+        print(f"⚠️ URL が存在しません: {url_kyougi_betsu_itiran}")
+        return
     
     # プロジェクトルートから database/realtime フォルダを指す
     realtime_dir = Path(__file__).parent.parent.parent / 'database' / 'realtime'
@@ -42,8 +46,11 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
     
     ・あれば，履歴を確保
     """
-
     html= fetch_html(url_kyougi_betsu_itiran)
+    if html is None:
+        print(f"⚠️ html が存在しません: {url_kyougi_betsu_itiran}")
+        return
+    
     conference_name=parse_conference_title(html)
     add_conference_list(conference_name)
     events_name= parse_each_event_name_kaisizikoku(html)
@@ -82,20 +89,49 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
         #df_results= pd.DataFrame([])
         #print(df_status)
     #----------------------------------------------------
-    df_peding= df_status[df_status["status"] == "未完了"]
     now_result=parse_each_event_name_kaisizikoku(html)
     df_now_result = pd.DataFrame(now_result)
     df_status['状況']=df_now_result['状況']
+    #df_status['type']=df_now_result['type']
+    #print(df_status[df_status['状況'] != "結果"])
+    df_peding= df_status[df_status["status"] == "未完了"]
+    if df_peding.empty:
+        time.sleep(1)  # API制限対策のため1秒待機
+        if check_sheet_exists(
+            spreadsheet_id=spread_sheet_ID_conference,
+            sheet_name=conference_name,
+            cred_dict=creds_dict
+        ):
+            print("ℹ️ すでにすべての種目が完了しています。")
+        else:
+            # NaNやinfを空文字列に置換してからupdate()を呼ぶ
+            cleaned_results = df_results.replace([float('inf'), float('-inf')], pd.NA)
+            values=[cleaned_results.columns.tolist()] + cleaned_results.fillna('').values.tolist()
+            #print(cleaned_results)
+            #print(len(cleaned_results))
+            write_to_new_sheet(
+                spreadsheet_id=spread_sheet_ID_conference,
+                sheet_name=conference_name,
+                data=values,
+                cred_dict=creds_dict,
+                num_rows=len(cleaned_results)+1,  # データがある場合のみシートを作成
+                num_cols=len(cleaned_results.columns)+1  # 列数も指定
+            )
+            #print("ℹ️ すべての種目が完了しています。")
+        return
+    
     
     for index, row in df_peding.iterrows():
         #まず，種目の完了を判断
+        #print(row)
+        print(row["種目"])
         if row['状況']== "結果":
         # finish,urls=parse_all_event_finish(html=html, 
         #                    event_name=row["種目"], 
         #                    kubun=row["レース区分"],
         #                    betsu=row["種別"])
             print("種目:", row["種目"],row["種別"],row["レース区分"])
-            df_status.at[index, "status"] = "完了"
+            
             
             url=row['url']
             # for url in urls:
@@ -110,33 +146,61 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
             if result is not None:
                 #print(df_result)
                 #print(df_status.at[index, "status"])
+                if '種目' in row:
+                    df_result['種目'] = row['種目']
+                if '種別' in row:
+                    df_result['種別'] = row['種別']
                 df_results = pd.concat([df_results, df_result], ignore_index=True)
                 for idx in range(len(df_result)):
                     # スプレッドシートに書き込む
                     #print(df_result)
                     #print(df_result.iloc[idx])
-                    if row['type']=='Relay':
-                        name = "リレー"
+                    # "種目"と"種別"カラムが存在しない場合は追加
+                    if '種目' in row:
+                        df_result.at[idx, '種目'] = row['種目']
+                    if '種別' in row:
+                        df_result.at[idx, '種別'] = row['種別']
+                    
+                    if row['type'] == 'Relay':
+                        if '種別' in row:
+                            if '男' in str(row['種別']):
+                                name = "男子リレー"
+                            elif '女' in str(row['種別']):
+                                name = "女子リレー"
+                            else:
+                                name = "リレー"
+                        else:
+                            name = "リレー"
                     else:
-
                         name= parse_player_name(str(df_result.iloc[idx]['氏名']))
                     add_member_list(name)
                     add_event_list(row['種目'])
                     print(name)
+                    time.sleep(1)  # API制限対策のため1秒待機
                     write_to_new_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
                         sheet_name=parse_player_name(name),
                         data=df_result.iloc[idx].to_dict(),
                         cred_dict=creds_dict
                     )
-                    write_to_new_sheet(
-                        spreadsheet_id=spread_sheet_ID_conference,
-                        sheet_name=conference_name,
-                        data=df_result.iloc[idx].to_dict(),
-                        cred_dict=creds_dict
-                    )
-                    df_status.to_json(str(status_path), orient="records", lines=True)
-                    df_results.to_json(str(results_path), orient="records", lines=True)
+                    #--------
+                    time.sleep(1)  # API制限対策のため1秒待機
+                    # delete_sheet(
+                    #     spreadsheet_id=spread_sheet_ID_conference,
+                    #     sheet_name=name,
+                    #     cred_dict=creds_dict
+                    # )
+
+                    #-------
+                    # write_to_new_sheet(
+                    #     spreadsheet_id=spread_sheet_ID_conference,
+                    #     sheet_name=conference_name,
+                    #     data=df_result.iloc[idx].to_dict(),
+                    #     cred_dict=creds_dict
+                    # )
+            df_status.at[index, "status"] = "完了"
+            df_status.to_json(str(status_path), orient="records", lines=True)
+            df_results.to_json(str(results_path), orient="records", lines=True)
 
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────

@@ -97,13 +97,15 @@ def parse_all_event_finish(html, event_name, betsu, kubun):
 def parse_player_name(name):
     """
     選手名をパースして日本語名部分のみを返す
-    例: "小林 恒方(M2)Tsunemasa Kobyashi" → "小林 恒方"
+    例: "小林 恒方(M2)Tsunemasa Kobyashi" → "小林　恒方"
     """
     # 日本語名部分のみ抽出（漢字・ひらがな・カタカナ・全角スペース・半角スペースのみ）
     m = re.match(r'^([\u3000-\u303F\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\s]+)', name)
     jp_name = m.group(1).strip() if m else name
     # 括弧内(M2)などを除去
     jp_name = re.sub(r'[\(\（][^)\）]*[\)\）]', '', jp_name).strip()
+    # 姓名の間の空白を全て全角スペースに統一
+    jp_name = re.sub(r'[\s\u3000]+', '　', jp_name)
     # 全て空白なら空文字を返す
     if not jp_name or jp_name.isspace():
         return ''
@@ -173,7 +175,7 @@ def parse_event_detail(html, player_name=None, univ=None):
         span = int(th.get('colspan', 1))
         # colspanが2なら同じカラム名を2回追加
         headers.extend([text] * span)
-    print(headers)
+    #print(headers)
 
     results = []
     for row in table.find_all('tr')[1:]:
@@ -583,7 +585,7 @@ def parse_each_event_name_kaisizikoku(html):
                 event_type = 'Mult'
             elif '跳' in event_name:
                 event_type = 'Jump'
-            elif 'R' in event_name or 'Ｒ' in event_name:
+            elif 'R' in event_name or 'Ｒ' in event_name or '×' in event_name or'x' in event_name:
                 event_type = 'Relay'
             elif '投' in event_name:
                 event_type = 'Throw'
