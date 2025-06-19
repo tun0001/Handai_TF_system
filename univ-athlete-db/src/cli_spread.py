@@ -159,16 +159,16 @@ def main():
     ]
     print(df_todo.head(10))  # 最初の10行を表示
 
-    urls = load_com_urls()
-    for url in urls:
-        run_real_time_v2(
-            url=url,
-            univ='大阪大',
-            spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
-            spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
-            creds_dict=creds_dict,
-            announce_discord=False
-        )
+    # urls = load_com_urls()
+    # for url in urls:
+    #     run_real_time_v2(
+    #         url=url,
+    #         univ='大阪大',
+    #         spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
+    #         spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
+    #         creds_dict=creds_dict,
+    #         announce_discord=False
+    #     )
     member_list= load_member_list()
     print(member_list)
     for member in member_list:

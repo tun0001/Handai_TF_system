@@ -385,6 +385,23 @@ def sort_dataframe_by_date(df: pd.DataFrame) -> pd.DataFrame:
     df_sorted = df.sort_values(by=['年', '月', '日'], ascending=True)
     return df_sorted
 
+def get_season(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    '日付'列からシーズンを抽出してDataFrameを返す
+    """
+    if '年' in df.columns:
+        def get_season_name(year,month):
+            if month in [1,2,3]:
+                return year-1
+            else:
+                return year
+        #season_list=df['年'].unique().tolist()
+
+        df['season'] = df.apply(lambda row: get_season_name(row['年'], row['月']), axis=1)
+        return df
+    else:
+        return df
+
 # 重複行を削除する処理を関数化
 def remove_duplicates_from_df(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates()
@@ -399,6 +416,86 @@ def reorder_columns_by_priority(df: pd.DataFrame) -> pd.DataFrame:
         remaining = [col for col in columns if col not in ordered_priority]
         new_columns = ordered_priority + remaining
         return df.reindex(columns=new_columns)
+
+def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    '種目'列から競技名を抽出してDataFrameを返す
+    """
+    if '種目' in df.columns:
+        # 正規表現で競技名を抽出（例: 100m, 走幅跳, 円盤投げ など）
+        def extract_event_name(event_name_1,event_name_2, type):
+            # 全角→半角変換（数字・英字）
+            event_name = event_name_2.translate(str.maketrans(
+            '０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ×',
+            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzx'
+            ))
+            event_track_list = [
+            "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
+            ]
+            event_wark_list=[
+                "5000mW", "10000mW", "20kW", "50kmW"
+            ]
+            event_hardle_list = [
+            "110mH", "300mH", "400mH", "3000mSC"
+            ]
+            event_relay_list = [
+            "4x100mR", "4x400mR", "4x200mR", "4x800mR"
+            ]
+            event_field_list = [
+            "走高跳", "走幅跳", "三段跳", "棒高跳",
+            "砲丸投", "円盤投", "ハンマー投", "やり投"
+            ]
+            event_multi_list = [
+            "十種競技", "七種競技"
+            ]
+            event_half_list = [
+            "ハーフマラソン"
+            ]
+
+            # タイプに応じてリストを選択
+            if "Track" in type:
+                #print(event_name)
+                for ev in event_track_list:
+                    if ev in event_name:
+                        return ev
+            elif "Walk" in type:
+                for ev in event_wark_list:
+                    if ev in event_name:
+                        return ev
+            elif "Hurdle" in type:
+                for ev in event_hardle_list:
+                    if ev in event_name:
+                        return ev
+            elif "Relay" in type:
+                for ev in event_relay_list:
+                    if ev in event_name:
+                        return ev
+            elif "Jump" in type or "Throw" in type:
+                for ev in event_field_list:
+                    if ev in event_name:
+                        return ev
+            elif "Score" in type:
+                for ev in event_multi_list:
+                    if ev in event_name_1:
+                        return ev
+            elif "Half" in type:
+                for ev in event_half_list:
+                    if ev in event_name:
+                        return ev
+            else:
+                # 上記に該当しない場合はパターン抽出
+                m = re.search(r'(\d+\.?\d*[mcm]|[^\d\s]+)', event_name)
+                return m.group(0) if m else ""
+
+            # event_name = event_name.translate(str.maketrans('０１２３４５６７８９', '0123456789'))
+            # # 競技名のパターン: 数字+単位、または文字列
+            # m = re.search(r'(\d+\.?\d*[mcm]|[^\d\s]+)', event_name)
+            # return m.group(0) if m else ""
+        
+        df['event'] = df.apply(lambda row: extract_event_name(row['種目'],row['競技'], row['type']) if '競技' in row and 'type' in row else "", axis=1)
+        return df
+    else:
+        return df
 
 def get_grade_column(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -440,6 +537,7 @@ def extract_wind(record):
     # +または-の直後の数値（例: +2.0, -1.5）を抽出
     m = re.search(r'([+-]\d+(?:\.\d+)?)', record)
     return m.group(1) if m else None
+
 def remove_wind_from_record(record):
     # 例: '10.33+0.2' -> '10.33', '6m70+0.2' -> '6m70'
     m = re.match(r'^(\d+(?:m\d+)?(?:\.\d+)?)[+-]\d+\.\d+', record)
@@ -447,20 +545,63 @@ def remove_wind_from_record(record):
         return m.group(1)
     # 風の値が含まれていない場合はそのまま
     return record
+
 def extract_record(record):
     # 例: '1:00.37[ 1:00.370]' → '1:00.37'
-    # まず [ ] 内の値があればそれを優先
-    m = re.search(r'\[ *([0-9:.]+) *\]', record)
+    # まず 1:00.37 のような形式を優先
+    m = re.search(r'(\d+:\d+\.\d+)', record)
     if m:
         return m.group(1)
-    # 次に 1:00.37 のような形式を優先
-    m = re.search(r'(\d+:\d+\.\d+)', record)
+    # 15.20[44.4] のような場合は [ の前の値を優先
+    m = re.match(r'^([0-9.]+)\[', record)
+    if m:
+        return m.group(1)
+    # 次に [ ] 内の値があればそれを使う
+    m = re.search(r'\[ *([0-9:.]+) *\]', record)
     if m:
         return m.group(1)
     # それ以外は従来通り
     m = re.search(r'(\d+(?:m\d+)?(?:\.\d+)?)', record)
     return m.group(1) if m else None
 
+def get_event_type(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    '種目'列から競技種目を抽出してDataFrameを返す
+    """
+    if '種目' in df.columns:
+        def determine_event_type(event_name_1,event_name_2):
+            if '種' in event_name_1 or '種' in event_name_2:
+                if '跳' in event_name_2 :
+                    event_mid = 'Jump'
+                elif '投' in event_name_2:
+                    event_mid = 'Throw'
+                elif 'h' in event_name_2 or 'ｈ' in event_name_2 or 'H' in event_name_2 or 'Ｈ' in event_name_2:
+                    event_mid = 'Hurdle'
+                elif 'm' in event_name_2 or 'ｍ' in event_name_2 or 'M' in event_name_2 or 'Ｍ' in event_name_2:
+                    event_mid = 'Track'
+                else :
+                    event_mid = 'Score'
+                event_type = 'Mult' + ' ' + event_mid
+            elif '跳' in event_name_1:
+                event_type = 'Jump'
+            elif 'R' in event_name_1 or 'Ｒ' in event_name_1 or '×' in event_name_1 or'x' in event_name_1:
+                event_type = 'Relay'
+            elif '投' in event_name_1:
+                event_type = 'Throw'
+            elif 'ハーフ' in event_name_1:
+                event_type = 'Half'
+            elif 'h' in event_name_1 or 'H' in event_name_1 or 'ｈ' in event_name_1 or 'Ｈ' in event_name_1 or 'S' in event_name_1 or 's' in event_name_1 or 'Ｓ' in event_name_1 or 'ｓ' in event_name_1:
+                event_type = 'Hurdle'
+            elif 'w' in event_name_1 or 'W' in event_name_1 or 'ｗ' in event_name_1 or 'Ｗ' in event_name_1:
+                event_type = 'Walk'
+            else:
+                event_type = 'Track'
+            return event_type
+        
+        df['type'] = df.apply(lambda row: determine_event_type(row['種目'], row['競技']) if '競技' in df.columns else row['種目'], axis=1)
+        return df
+    else:
+        return df
 
 def get_true_record(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -481,6 +622,48 @@ def get_true_record(df: pd.DataFrame) -> pd.DataFrame:
         record_values = df['記録'].apply(extract_record)
         # '記録'列の更新
         df['記録'] = record_values
+        return df
+    else:
+        return df
+
+def get_compare_record(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    '記録'列から比較用の数値部分を抽出してDataFrameを返す
+    例:
+      - "17:09.17" → 1709.17
+      - "6m70" → 670
+      - "10.33" → 10.33
+      - "44.4" → 44.4
+    """
+    def extract_compare_record(record):
+        if not isinstance(record, str):
+            return None
+        record = record.strip()
+        # 時間形式 (例: 17:09.17, 1:00.370)
+        m = re.match(r'^(\d+):(\d+)\.(\d+)$', record)
+        if m:
+            min_, sec, ms = m.groups()
+            # 秒・ミリ秒を2桁ずつに揃えて連結
+            return float(f"{int(min_):02d}{int(sec):02d}.{ms[:2].ljust(2, '0')}")
+        # 跳躍・投擲形式 (例: 6m70)
+        m = re.match(r'^(\d+)m(\d+)$', record)
+        if m:
+            m1, m2 = m.groups()
+            return float(f"{int(m1)}{int(m2):02d}")
+        # 小数形式 (例: 10.33, 44.4)
+        m = re.match(r'^(\d+)\.(\d+)$', record)
+        if m:
+            n1, n2 = m.groups()
+            n2 = n2[:2].ljust(2, '0')
+            return float(f"{int(n1)}.{n2}")
+        # 整数形式
+        m = re.match(r'^(\d+)$', record)
+        if m:
+            return float(f"{int(m.group(1))}.00")
+        return None
+
+    if '記録' in df.columns:
+        df['記録(比較)'] = df['記録'].apply(extract_compare_record)
         return df
     else:
         return df
@@ -527,17 +710,103 @@ def process_sheet(
     
     df_3 = reorder_columns_by_priority(df_2)  # 優先カ
     df_4 = get_true_record(df_3)  # 記録列から数値部分を抽出,風速を抽出
-    df_sorted = sort_dataframe_by_date(df_4)  # 日付でソート
+    df_5 = get_event_type(df_4)  # 種目列から競技種目を抽出
+    df_6 = sort_dataframe_by_date(df_5)  # 日付でソート
+    df_7 = get_season(df_6)  # シーズンを抽出
+    df_8 = get_event_name(df_7)  # 種目名を抽出
+    df_9 = get_compare_record(df_8)  # 比較用の記録を抽出
+    df_10 = add_pb_column(df_9)  # PB列を追加
+    df_11 = add_sb_column(df_10)  # SB列を追加
     
+    df_sorted = df_11
     # ソート用のカラムを削除
     #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
-    
+
+    # NaNを空文字に変換
+    df_sorted = df_sorted.where(pd.notnull(df_sorted), "")
+
     # 更新するデータをリスト形式に変換
     updated_data = [df_sorted.columns.tolist()] + df_sorted.values.tolist()
     
     # シートを更新
     worksheet.clear()  # 既存のデータをクリア
     worksheet.update('A1', updated_data)  # 新しいデータを書き込む
+
+def add_pb_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    DataFrameからPB（Personal Best）を抽出して新しい列を追加する
+    """
+    df_pb = df
+    event_list = df['event'].unique()
+    df['PB'] = ""
+    for event in event_list:
+        df_event = df_pb[df_pb['event'] == event]
+        if not df_event.empty:
+            # '記録(比較)' 列が存在するか確認
+            if '記録(比較)' not in df_event.columns:
+                print("'記録(比較)' column not found in the DataFrame.")
+                continue
+            # 最小の記録(比較)を取得
+            #print(event)
+            #print(df_event['type'])
+            # 'type'列の値に"Jump", "Throw", "Score"が含まれている行が1つでもあれば最大値を使用
+            if df_event['type'].astype(str).str.contains('Jump|Throw|Score').any():
+                # 跳躍・投擲・複合競技の場合は最大値を使用
+                #print("Using max for PB calculation")
+                if df_event['記録(比較)'].notna().any():
+                    pb_idx = df_event['記録(比較)'].idxmax()
+                else:
+                    pb_idx = None
+            else:
+                if df_event['記録(比較)'].notna().any():
+                    pb_idx = df_event['記録(比較)'].idxmin()
+                else:
+                    pb_idx = None
+
+            if pb_idx is not None and not pd.isnull(pb_idx):
+                if 'PB' not in df.columns:
+                    df['PB'] = ""
+                df.at[pb_idx, 'PB'] = "PB"
+    return df
+
+def add_sb_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    DataFrameからSB（Season Best）を抽出して新しい列を追加する
+    """
+    if '年' not in df.columns or 'event' not in df.columns:
+        print("'年' or 'event' column not found in the DataFrame.")
+        return df
+    season_list = df['年'].unique()
+    df['SB'] = ""
+    for season in season_list:
+        df_season = df[df['season'] == season]
+        event_list = df_season['event'].unique()
+        for event in event_list:
+            df_event = df_season[df_season['event'] == event]
+            if not df_event.empty:
+                # '記録(比較)' 列が存在するか確認
+                if '記録(比較)' not in df_event.columns:
+                    print("'記録(比較)' column not found in the DataFrame.")
+                    continue
+                # 最小の記録(比較)を取得
+                if df_event['type'].astype(str).str.contains('Jump|Throw|Score').any():
+                    # 跳躍・投擲競技の場合は最大値を使用
+                    if df_event['記録(比較)'].notna().any():
+                        sb_idx = df_event['記録(比較)'].idxmax()
+                    else:
+                        sb_idx = None
+                else:
+                    if df_event['記録(比較)'].notna().any():
+                        sb_idx = df_event['記録(比較)'].idxmin()
+                    else:
+                        sb_idx = None
+                if sb_idx is not None and not pd.isnull(sb_idx):
+                    if 'SB' not in df.columns:
+                        df['SB'] = ""
+                    df.at[sb_idx, 'SB'] = "SB"
+            else:
+                df.loc[df['event'] == event, 'SB'] = None
+    return df
 
 
 def sort_column(
@@ -667,6 +936,7 @@ def get_grade_record(
     
     return grade_record_row
 
+
 def get_PB_UB_SB(
         df: pd.DataFrame,
 )-> pd.DataFrame:
@@ -676,16 +946,16 @@ def get_PB_UB_SB(
     if '記録' not in df.columns:
         print("'記録' column not found in the DataFrame.")
         return df
+    #PB
     
-    # PB, UB, SBの初期化
-    df['PB'] = df['記録']
-    df['UB'] = df['記録']
-    df['SB'] = df['記録']
+
+    #UB
+
+    #SB
     
-    # 各列の最小値をPB、UB、SBとして設定
-    df['PB'] = df['PB'].min()
-    df['UB'] = df['UB'].min()
-    df['SB'] = df['SB'].min()
+        
+
+    
     
     return df.reset_index(drop=True)
 
@@ -746,10 +1016,12 @@ if __name__ == "__main__":
         {'氏名': "那木　悠右 (1)Yusuke NAGI (03)", '記録': '6m34+2.0 (追風)'},
         {'氏名': "小林  恒方(M3)", '記録': '333-1.5 (向風)'},
         {'氏名': "田中 太郎", '記録': '15.20[44.4]'},
+        {'氏名': "", '記録': '10.94[10.933]'},
         {'氏名': "佐藤 花子", '記録': '1:00.37[ 1:00.370]', '風': '0.0'},
     ])
     #df = get_wind_from_record(df)
     df = get_grade_column(df)
     df = get_true_record(df)
+    df = get_compare_record(df)
     print(df)
     
