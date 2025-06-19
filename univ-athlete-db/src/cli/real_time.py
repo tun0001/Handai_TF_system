@@ -172,14 +172,28 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                         else:
                             name = "リレー"
                     else:
-                        name= parse_player_name(str(df_result.iloc[idx]['氏名']))
+                        # 氏名から全角スペースを除いた文字列でmember_listから一致するものをnameとする
+
+                        member_list = load_member_list()
+                        player_name = parse_player_name(str(df_result.iloc[idx]['氏名']))
+                        player_name = player_name.replace('　', '').replace(' ', '')
+                        name = None
+                        for member in member_list:
+                            #print(f"比較: {player_name} vs {member.replace('　', '').replace(' ', '')}")
+                            if player_name == member.replace('　', '').replace(' ', ''):
+                                
+                                name = member
+                                break
+                        if name is None:
+                            name = parse_player_name(str(df_result.iloc[idx]['氏名']))
+                        
                     add_member_list(name)
                     add_event_list(row['種目'])
                     print(name)
                     time.sleep(1)  # API制限対策のため1秒待機
                     write_to_new_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
-                        sheet_name=parse_player_name(name),
+                        sheet_name=name,
                         data=df_result.iloc[idx].to_dict(),
                         cred_dict=creds_dict
                     )

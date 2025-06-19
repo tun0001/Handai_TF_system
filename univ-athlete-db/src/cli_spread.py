@@ -22,8 +22,8 @@ def main():
     creds_dict = {
     "type": "service_account",
     "project_id": "handai-tf-system-control",
-    "private_key_id": "25d03592b23b146791d7ee8279e2a06063c6fcd0",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCqIxSvKeKap8Ud\ndWgNPMfHyMBV639EK5st38PdBTwXxOEsFybb/laqD2UcBKOC2UTFlhkQuwuUwrVy\n8DgfIIOAXAvkvpCjciP+MiIL2qNJSVKPB+F6JqQe8FPOflG4kmt9Q/RWIjP2g7n1\n0eAshh7+CIkHx0uuTL8WTc3hrNMB9HVB/YhTD4Y4f4qbta4Hw/I7viFNhQdSWKJp\nzfpkY9e9dJr+pvKsbXdo5Ni7P7yx/kC6isNm0vuygigLsfPrPyXPnG7su5DqkuYl\n1Q6WcHUdA0whXwTqGD4hXLwpxI4Ln1dGa3d9XENkVV2JN9Lms7bvI8RX4tMTh+GP\nZvGFetDVAgMBAAECggEABSrcmXddtRHMaFklCGXksXo08UceTe0/INUPh1p92UD3\nD9ZCLWNbsX2XNhMj/jjoIFIvP7VWpDWHuk52feeIZvEkwVVSYkx4sGNIanDBDdxG\nwCZeoE2lJXVqLjbi94am8h6KwMT4LBATKVavBtsp/NA4jT5t24TkNuK1EpojrIb5\n+q9cRk3OplmXeHp7Ee0zU70OCEVmEiP6o2b3qiKfIMGfNfrf6Zat1KAwXVegmJa2\n2XQ2UEphjDGnPsfmseNcAZ4MRDF+DbszT6wKxDm4fvd3Ph6F/qBDpj1WhG2rywDr\nmcaYnslihs9bxIVGnR0+QlLd1WIVpC7SjONVWUhKzwKBgQDoS7guSkp6CLV0jCjR\nE6CPSWzo0/RC8wdUYLc6rOvhWaELziRAsnOM7RorA9MtQPbfkr3xzkpvvPnPKNyk\n2eufLYF9ru0s5uXX0gWG7bN9sf2NUbKOQmsB3G2UahMnGwg9HuJ+70buJrGh+1JZ\nZK3g9f+O+hMUt61OHQPY6Wqr4wKBgQC7f5Vqy/2T+sVJTZx7q+NvLCSfQeLG4Az6\nAOiRqSfuwNghFeCH3HLBnENyCXqWOuh04Cfnt3Bz9qoNFBKH4GICGkkAACsWXnFP\njKzxBXffusQgevL97zcinGQofHg0wlPCzWr0Igys/h7eGhOg8PfVYsd1tD+hxdV3\nQQP1Ogsd5wKBgHRu552ELTpnvRPy4M6TKOpJIma9PnSEPgtEAvNNE1o7w6YYKEGp\ncJOVkIU5AJNxOYysj7pw7Qx+yzPTxmx2skxx0bL+h/D2twPrSEvuPwZkvbMk3PvD\nPMGNC/vVA06ZlRKVtW9sXcAm8ug/AXK/LQxSIUs3+3Jp8lrx3ijOLmKDAoGARc3v\nA86kPoZ7EppZatWIm+gUTlJKKn5Zdm4GJ8yROFsFW/P4Hryc4KXbmkYbJHkT+AdH\n9AWgURwBHVNevsVz15KPoPdvEyngB5y4+hZuFZZD1E/RzWZU4YbV5xjH6+R5KKov\namqOy4zkUw3kRuPPcNsQpSqREhpEKdzDq3WLk/sCgYBcQTtjHXxnaq0GM3YYrHb0\nTfgX9mz9reyC7qhFQ0U1CGMZGahtD88TjgM56h5MdSsqf7uQmRG3/PZ2vPjhYInC\nNwpxq9QRT19VyO6mZ0VJX8KJz21LAEQQDXCi/QKyvc1zXqj0PBl9PcuuR8zwNg2s\nHWK3Jw+gCnblu1SnopbAiw==\n-----END PRIVATE KEY-----\n",
+    "private_key_id": "e93e656c7de092d7e456e63a0b98fae1e4673c07",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQD3QUZWjLx8Ewx2\nBoRL58EewurIRB9oSIrUTepVTtqcbGIp9BB2FQq6N2Ii4w2zx5AzgrmTDSactOQt\nLHMyO94OVwxzXAMVPeWJg1S3rwwWkrNSMocqT6RZ6YbeURYkqJIkT8CTSAarOFVu\nBuQkbdVLNFEgmRV+dXTMnplqFbNryg+ae3e6jIzAlkVZLLCge+2Av6dLzIT9C7FN\nB4+TKHnRCcNGgTGqqgBL6NEVwbbJDcTLddyvmbrEzsYg1nbxWallWwUBQAKWHCDT\nLAUOqQadfjzzqIenwRYd/lEX3AsXz4Fcnu1o+LYtVq9VBoLvoYlOtyPDMuY/XEdC\nb/v+PcUbAgMBAAECggEAYVNjYYwyYVCKNicoikxmezpUepI+Hql3ZExrMjtA2BPd\nrA/zLtfnihdk3MCtUxf5zhzl+VlS2pplutZlXd+s784aC4qreAAOS0vT3B3eT0Bd\nr7xN8jy5P98phHc8lR95rytpbVALt/gLwKybvy8wp1KnoIJBsK6BVE4Vq2lxX7q6\nwu8L5XjvoNcuifvtcMfaI6l6gGivX0Npio3W0H3eb/HSikAsqzRE84QbynC05ar0\nhE2Cjqj0w+TyXz2efRdejpmELnbxb8uTh9/ZR2/q863aK2B9VGhwmagaKNJK1oPG\neIgFyf1mTm23f0/rRTGLKKiHgdcQRCPd494TLsT3iQKBgQD/+g6Eiv4ANZ94k+3i\nB7xNeLzf9HE8x+XxhC6GzfJCimYpnMF2Lv8zJnUk94Qr6WgasRpJWXUgtpCw9s8m\nf7HVykKJLytoiZMG98FsfyhWAIbpP2RyhZRvpoKnpPP6dL1icKHjyFlH9wZJ2+9I\n/D96b1h1CEcqvyHmxwZqipiyVwKBgQD3RwP6u4V82xRWuip6rOaJVzwqWbdvYvoY\n1u+B9Foo98iFcqpqzNfX2ySgpqA6y80ji7wnWxHmxE3rC+Fyxc81AbIDr2+Sm9zL\nMB7qshWo3eX97Ae9Zk/36Lb1G36hN2IinEHOIpc7DDAgHc8bBINZMEpOw9ObZVp/\n1+kyDrCw3QKBgQCS2QRNG2O+AQU8ajj1C5UGKLbKD/SKdu8+T6NVaH6Ll9QmGSyP\nPUTgNjbL/0cO3fcAIQvAepaMLs/xBZYvMuB1knP7OVlAvnPfcnC/am9cby72Toy0\neld+edrIjAP/cctX1t+4yi4V7+vmoUqz5yoPdiMb+KTDLCUpvJG8u0gAPwKBgFhS\nFSnJMLSXy3vuop2OhAkqD2NRCCPQxmN44bMZA9r+JbEEc7oR0EZZD4wR98kIYg0A\nLAQikxJJq0r4w12rKYdVQ6/tSXykDwjD90b8tJ/MIgm/9EPB924kwLRrTZ9nmLWj\n+h0WXc3JXKcb/o0333JLvT7E0x/944UmKTSn6pRBAoGAYV91UZmNBYm96GMwYUIf\nGYI/e404NiT0nUHsau8YXMvnA4+p0XePTP1euhq9Dfp/mDy9V/X7Y6evRblnLHf5\nf0U1qz1Qkp7OTQa+Rgh4FAe2EC9NpyB4ihwTrVvCdz0s6KX+mt90JtSUrc2Vzr2A\n0OsngqRW7TWyhG3UvYxNWMU=\n-----END PRIVATE KEY-----\n",
     "client_email": "edit-tf-schedule@handai-tf-system-control.iam.gserviceaccount.com",
     "client_id": "115271653994163090816",
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -32,6 +32,8 @@ def main():
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/edit-tf-schedule%40handai-tf-system-control.iam.gserviceaccount.com",
     "universe_domain": "googleapis.com"
     }
+
+    
 
 
     # 認証スコープ
@@ -43,8 +45,10 @@ def main():
     # スプレッドシートを開く
     SPREADSHEET_ID_MEMBER = os.getenv('SPREADSHEET_ID_MEMBER')
     SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID_CONFERENCE')
+    SPREADSHEET_ID_BEST = os.getenv('SPREADSHEET_ID_BEST')
     SPREADSHEET_ID_MEMBER="1vN-qqu4RB-Ukp2tR5WDQJB9P-uRPgGp3L6MDz2XfPAE"
     SPREADSHEET_ID_CONFERENCE="1yAI2wwNWBWdWfrbaiXA5EvjuKoHCztwjAnUYRkNNbPw"
+    SPREADSHEET_ID_BEST="1ODPNaPIrphI1NV8ZXI5MLM6arKjKnVa7RxounPeX9CM"
     worksheet_conference = client.open_by_key(SPREADSHEET_ID_CONFERENCE).sheet1
     worksheet_member = client.open_by_key(SPREADSHEET_ID_MEMBER).sheet1
     
@@ -154,18 +158,6 @@ def main():
         )
     ]
     print(df_todo.head(10))  # 最初の10行を表示
-    
-    member_list= load_member_list()
-    #print(member_list)
-    # for member in member_list:
-    #     #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
-    #     time.sleep(1)  # API制限対策のため1秒待機
-    #     print(f"メンバー: {member}")
-    #     deduplicate_sheet(
-    #         spreadsheet_id=SPREADSHEET_ID_MEMBER,
-    #         sheet_name=member,
-    #         cred_dict=creds_dict
-    #     )
 
     urls = load_com_urls()
     for url in urls:
@@ -176,6 +168,17 @@ def main():
             spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
             creds_dict=creds_dict,
             announce_discord=False
+        )
+    member_list= load_member_list()
+    print(member_list)
+    for member in member_list:
+        #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
+        time.sleep(2)  # API制限対策のため1秒待機
+        print(f"メンバー: {member}")
+        process_sheet(
+            spreadsheet_id=SPREADSHEET_ID_MEMBER,
+            sheet_name=member,
+            creds_dict=creds_dict
         )
 
     for index, row in df_todo.iterrows():

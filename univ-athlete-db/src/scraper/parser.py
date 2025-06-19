@@ -98,6 +98,9 @@ def parse_player_name(name):
     """
     選手名をパースして日本語名部分のみを返す
     例: "小林 恒方(M2)Tsunemasa Kobyashi" → "小林　恒方"
+    
+    濱田　惠美
+    濱田　恵美
     """
     # 日本語名部分のみ抽出（漢字・ひらがな・カタカナ・全角スペース・半角スペースのみ）
     m = re.match(r'^([\u3000-\u303F\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\s]+)', name)
