@@ -292,7 +292,7 @@ def write_to_new_sheet(
     data,
     cred_dict: dict | None = None,
     num_rows: int = 100,
-    num_cols: int = 26,
+    num_cols: int = 50,
 ):
     """
     新規シートを作成して data を一括で書き込む
@@ -369,6 +369,114 @@ def write_to_new_sheet(
         worksheet.resize(rows=start_row + rows - 1, cols=cols)
         worksheet.update(f'A{start_row}', data_rows)
 
+def member_best_to_sheet(
+    spreadsheet_id_member: str,
+    spreadsheet_id_best: str,
+    creds_dict: dict | None = None
+):
+    """
+    メンバーシートからベスト記録シートにデータを転記する
+    cred_dict: 認証情報の辞書形式
+    """
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    client = gspread.authorize(creds)
+    
+    # メンバーシートを開く
+    member_sheets = client.open_by_key(spreadsheet_id_member)
+    member_list= load_member_list()
+    df_best = pd.DataFrame()
+    for member in member_list:
+        try:
+            member_sheet = member_sheets.worksheet(member)
+            print(member)
+            time.sleep(1.5)  # API制限を避けるために少し待機
+        except gspread.exceptions.WorksheetNotFound:
+            print(f"Member sheet '{member}' not found in spreadsheet '{spreadsheet_id_member}'.")
+            continue
+        data= member_sheet.get_all_values()
+        df_member = pd.DataFrame(data[1:], columns=data[0])
+        df_member['member_name']= member  # メンバー名を追加
+        event_list= df_member['event'].unique().tolist()
+        for event in event_list:
+            df_event = df_member[df_member['event'] == event]
+            #SB（シーズンベスト）を抽出
+            if 'SB' in df_event.columns:
+                df_event = df_event[df_event['SB'] != ""]
+                if not df_event.empty:
+                    df_best = pd.concat([df_best, df_event], ignore_index=True)
+    print(df_best['member_name'].unique())
+    for season in df_best['season'].unique():
+        df_season = df_best[df_best['season'] == season]
+        df_season_records = pd.DataFrame(columns=df_season.columns)
+        for name in df_season['member_name'].unique():
+            #print(name)
+            df_name = df_best[df_best['member_name'] == name]
+            #print(df_name[])
+            if not df_name.empty:
+                df_season_records = pd.concat([df_season_records, df_name], ignore_index=True)
+        df_season_records = df_season_records[(df_season_records['season']==season) | (df_season_records['PB'] != "")]
+        sheet_name= f"{season}_member_best"
+        #df_season_recordsを加工する
+        # 特定のカラムだけを選択して書き出す
+        selected_columns = ['member_name','年','season', 'event', '記録(公認)', '風(公認)', 'PB', 'SB']
+        df_season_records = df_season_records[selected_columns]
+
+        # Create a pivot table style dataframe with one row per member
+        pivot_records = pd.DataFrame(columns=['member_name'])
+        pivot_records['member_name'] = df_season_records['member_name'].unique()
+
+        # For each unique member and event, extract PB and SB records with their year and wind info
+        for member in df_season_records['member_name'].unique():
+            member_data = df_season_records[df_season_records['member_name'] == member]
+            print(f"Processing member: {member} for season: {season}")
+            print(member_data['season'].unique())
+            for event in member_data['event'].unique():
+                event_data = member_data[member_data['event'] == event]
+                
+                # Get rows with PB and SB
+                pb_row = event_data[event_data['PB'] == 'PB']
+                sb_row = event_data[(event_data['SB'] == 'SB') & (event_data['season'] == season)]
+                
+                # Add SB record only if it matches the current season in the loop
+                if not sb_row.empty:
+                    if str(sb_row.iloc[0]['season']) == str(season):
+                        record_sb = sb_row.iloc[0]['記録(公認)']
+                        wind_sb = f" ({sb_row.iloc[0]['風(公認)']})" if '風(公認)' in sb_row.columns and not pd.isna(sb_row.iloc[0]['風(公認)']) and sb_row.iloc[0]['風(公認)'] != "" else ""
+                        year_sb = f" [{sb_row.iloc[0]['年']}]" if '年' in sb_row.columns and not pd.isna(sb_row.iloc[0]['年']) else ""
+                        
+                        # Combine record, wind, and year into a single formatted column
+                        pivot_records.loc[pivot_records['member_name'] == member, f"{event}SB(風)年月"] = f"{record_sb}{wind_sb}{year_sb}"
+                
+                # Add PB record with combined format for wind and year
+                if not pb_row.empty:
+                    record_pb = pb_row.iloc[0]['記録(公認)']
+                    wind_pb = f" ({pb_row.iloc[0]['風(公認)']})" if '風(公認)' in pb_row.columns and not pd.isna(pb_row.iloc[0]['風(公認)']) and pb_row.iloc[0]['風(公認)'] != "" else ""
+                    year_pb = f" [{pb_row.iloc[0]['年']}]" if '年' in pb_row.columns and not pd.isna(pb_row.iloc[0]['年']) else ""
+                    
+                    # Combine record, wind, and year into a single formatted column
+                    pivot_records.loc[pivot_records['member_name'] == member, f"{event}PB(風)年月"] = f"{record_pb}{wind_pb}{year_pb}"
+
+        # Use pivot_records instead of merging with original data
+        df_season_records = pivot_records
+
+
+        write_to_new_sheet(
+            spreadsheet_id=spreadsheet_id_best,
+            sheet_name=sheet_name,
+            data=df_season_records,
+            cred_dict=creds_dict
+        )
+    
+
+
+
+
+    
 
 #--------------
 def sort_dataframe_by_date(df: pd.DataFrame) -> pd.DataFrame:
@@ -626,6 +734,93 @@ def get_true_record(df: pd.DataFrame) -> pd.DataFrame:
     else:
         return df
 
+def get_official_record(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    記録から公認記録を抽出し、それに対応する風速の値も"風(公認)"列に追加する
+    """
+
+    if '記録' in df.columns:
+        # 風(公認)列を追加
+        df['風(公認)'] = ""
+        
+        def extract_official_record(record, wind):
+            # If wind is not a string or empty, return the original record
+            if not isinstance(wind, str) or not wind:
+                return record
+            
+            try:
+                # Convert wind value to float for comparison
+                wind_value = float(wind)
+                
+                # If wind is <= +2.0, the record is official
+                if wind_value <= 2.0:
+                    return record
+                else:
+                    # For wind > +2.0, mark as wind-aided (not official)
+                    return ""
+            except ValueError:
+                # If wind can't be converted to float, return the original record
+                return record
+
+        # Apply the function row by row
+        df['記録(公認)'] = df.apply(
+            lambda row: extract_official_record(row['記録'], row['風']), 
+            axis=1
+        )
+        
+        # 公認記録がある場合、風(公認)にも風の値をセット
+        mask = df['記録(公認)'] != ""
+        df.loc[mask, '風(公認)'] = df.loc[mask, '風']
+        
+        # For long jump and triple jump, check for valid records in attempt columns when official record is empty
+        if '記録(公認)' in df.columns and 'event' in df.columns:
+            mask = (df['記録(公認)'] == "") & ((df['event'] == "走幅跳") | (df['event'] == "三段跳"))
+            
+            for idx in df[mask].index:
+                best_record = None
+                best_record_value = 0
+                best_wind = None
+                
+                # Check all attempt columns
+                for attempt_col in ['1回','2回', '3回', '4回', '5回', '6回']:
+                    if attempt_col in df.columns and pd.notna(df.at[idx, attempt_col]) and df.at[idx, attempt_col] != "":
+                        attempt = df.at[idx, attempt_col]
+                        # Extract wind value from the attempt
+                        wind_value = extract_wind(attempt)
+                        
+                        # Extract record from the attempt
+                        record_value = extract_record(remove_wind_from_record(attempt))
+                        
+                        # If wind value is <= 2.0 or not present, consider it as official
+                        if record_value and (wind_value is None or float(wind_value) <= 2.0):
+                            # Convert to numeric for comparison
+                            try:
+                                # For jump events, extract meters and centimeters (e.g., "6m73" -> 6.73)
+                                if 'm' in record_value:
+                                    m_part = float(record_value.split('m')[0])
+                                    cm_part = float(record_value.split('m')[1]) / 100
+                                    numeric_value = m_part + cm_part
+                                else:
+                                    numeric_value = float(record_value)
+                                
+                                # Keep the best record
+                                if numeric_value > best_record_value:
+                                    best_record_value = numeric_value
+                                    best_record = record_value
+                                    best_wind = wind_value
+                            except (ValueError, IndexError):
+                                pass  # Skip invalid formats
+                
+                # Use the best valid record found
+                if best_record:
+                    df.at[idx, '記録(公認)'] = best_record
+                    if best_wind:
+                        df.at[idx, '風(公認)'] = best_wind
+                
+        return df
+    else:
+        return df
+
 def get_compare_record(df: pd.DataFrame) -> pd.DataFrame:
     """
     '記録'列から比較用の数値部分を抽出してDataFrameを返す
@@ -663,10 +858,12 @@ def get_compare_record(df: pd.DataFrame) -> pd.DataFrame:
         return None
 
     if '記録' in df.columns:
-        df['記録(比較)'] = df['記録'].apply(extract_compare_record)
+        df['記録(比較)'] = df['記録(公認)'].apply(extract_compare_record)
         return df
     else:
         return df
+
+
 
 def process_sheet(
     spreadsheet_id: str,
@@ -714,11 +911,12 @@ def process_sheet(
     df_6 = sort_dataframe_by_date(df_5)  # 日付でソート
     df_7 = get_season(df_6)  # シーズンを抽出
     df_8 = get_event_name(df_7)  # 種目名を抽出
-    df_9 = get_compare_record(df_8)  # 比較用の記録を抽出
-    df_10 = add_pb_column(df_9)  # PB列を追加
-    df_11 = add_sb_column(df_10)  # SB列を追加
+    df_9 = get_official_record(df_8)  # 公認記録を抽出
+    df_10 = get_compare_record(df_9)  # 比較用の記録を抽出
+    df_11 = add_pb_column(df_10)  # PB列を追加
+    df_12 = add_sb_column(df_11)  # SB列を追加
     
-    df_sorted = df_11
+    df_sorted = df_12
     # ソート用のカラムを削除
     #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
 
@@ -773,10 +971,10 @@ def add_sb_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     DataFrameからSB（Season Best）を抽出して新しい列を追加する
     """
-    if '年' not in df.columns or 'event' not in df.columns:
-        print("'年' or 'event' column not found in the DataFrame.")
+    if 'season' not in df.columns or 'event' not in df.columns:
+        print("'season' or 'event' column not found in the DataFrame.")
         return df
-    season_list = df['年'].unique()
+    season_list = df['season'].unique()
     df['SB'] = ""
     for season in season_list:
         df_season = df[df['season'] == season]
@@ -848,50 +1046,6 @@ def sort_column(
     worksheet.clear()  # 既存のデータをクリア
     worksheet.update('A1', updated_data)  # 新しいデータを書き込む
 
-def get_official_record(
-    spreadsheet_id: str,
-    sheet_name: str,
-    cred_dict: dict | None = None,
-):
-    """
-    指定されたスプレッドシートの指定シートから公式記録を取得する
-    cred_dict: 認証情報の辞書形式
-    """
-    scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive",
-    ]
-    
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
-    client = gspread.authorize(creds)
-    sh = client.open_by_key(spreadsheet_id)
-    
-    try:
-        worksheet = sh.worksheet(sheet_name)
-    except gspread.exceptions.WorksheetNotFound:
-        print(f"Worksheet '{sheet_name}' not found in spreadsheet '{spreadsheet_id}'.")
-        return None
-
-    # シートの全データ取得（2次元リスト）
-    data = worksheet.get_all_values()
-    
-    if not data or len(data) < 2:
-        print("No data found in the sheet.")
-        return None
-    
-    # ヘッダーを除いたデータ部分をDataFrameに変換
-    df = pd.DataFrame(data[1:], columns=data[0])
-    
-    # '記録' 列が存在するか確認
-    if '記録' not in df.columns:
-        print("'記録' column not found in the sheet.")
-        return None
-    
-    # 公式記録を取得（ここでは例として '記録' 列が最小の行を選ぶ）
-    official_record_row = df.loc[df['記録'].idxmin()]
-    
-    return official_record_row
-
 def get_grade_record(
     spreadsheet_id: str,
     sheet_name: str,
@@ -935,29 +1089,6 @@ def get_grade_record(
     grade_record_row = df.loc[df['記録'].idxmax()]
     
     return grade_record_row
-
-
-def get_PB_UB_SB(
-        df: pd.DataFrame,
-)-> pd.DataFrame:
-    """
-    DataFrameからPB（Personal Best）、UB（University Best）、SB（Season Best）を抽出して新しい列を追加する
-    """
-    if '記録' not in df.columns:
-        print("'記録' column not found in the DataFrame.")
-        return df
-    #PB
-    
-
-    #UB
-
-    #SB
-    
-        
-
-    
-    
-    return df.reset_index(drop=True)
 
 def choose_best_sheet(
     spreadsheet_id_member: str,
@@ -1014,7 +1145,7 @@ if __name__ == "__main__":
     # サンプルデータ: '氏名'と'記録'列を含む
     df = pd.DataFrame([
         {'氏名': "那木　悠右 (1)Yusuke NAGI (03)", '記録': '6m34+2.0 (追風)'},
-        {'氏名': "小林  恒方(M3)", '記録': '333-1.5 (向風)'},
+        {'氏名': "小林  恒方(M3)",'event':'三段跳', '記録': '333+2.5 (向風)','2回':'6m73+2.8','3回':'6m74+2.8'},
         {'氏名': "田中 太郎", '記録': '15.20[44.4]'},
         {'氏名': "", '記録': '10.94[10.933]'},
         {'氏名': "佐藤 花子", '記録': '1:00.37[ 1:00.370]', '風': '0.0'},
@@ -1022,6 +1153,8 @@ if __name__ == "__main__":
     #df = get_wind_from_record(df)
     df = get_grade_column(df)
     df = get_true_record(df)
+    df = get_official_record(df)
     df = get_compare_record(df)
+    
     print(df)
     

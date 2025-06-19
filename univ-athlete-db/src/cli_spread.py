@@ -169,17 +169,22 @@ def main():
     #         creds_dict=creds_dict,
     #         announce_discord=False
     #     )
-    member_list= load_member_list()
-    print(member_list)
-    for member in member_list:
-        #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
-        time.sleep(2)  # API制限対策のため1秒待機
-        print(f"メンバー: {member}")
-        process_sheet(
-            spreadsheet_id=SPREADSHEET_ID_MEMBER,
-            sheet_name=member,
-            creds_dict=creds_dict
-        )
+    # member_list= load_member_list()
+    # print(member_list)
+    # for member in member_list:
+    #     #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
+    #     time.sleep(2)  # API制限対策のため1秒待機
+    #     print(f"メンバー: {member}")
+    #     process_sheet(
+    #         spreadsheet_id=SPREADSHEET_ID_MEMBER,
+    #         sheet_name=member,
+    #         creds_dict=creds_dict
+    #     )
+    member_best_to_sheet(
+        spreadsheet_id_member=SPREADSHEET_ID_MEMBER,
+        spreadsheet_id_best=SPREADSHEET_ID_BEST,
+        creds_dict=creds_dict
+    )
 
     for index, row in df_todo.iterrows():
         #print(f"大会名: {row['大会名']}, 開始日: {row['日付(開始日)']}, 終了日: {row['日付(終了日)']}")
