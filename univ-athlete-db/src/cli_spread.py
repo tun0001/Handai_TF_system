@@ -159,9 +159,50 @@ def main():
     ]
     print(df_todo.head(10))  # 最初の10行を表示
 
-    # urls = load_com_urls()
+    urls = load_com_urls()
+    member_to_find=['国吉　遼河','百濃　隼大','中嶋　遼']
+    # urls=[
+    #     "https://gold.jaic.org/icaak/record/2024/14_SHUMOKU/kyougi.html",
+    #      "https://gold.jaic.org/icaak/record/2023/14_SHUMOKU/kyougi.html"
+    #      ]
+    urls_high=[
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2024/240504/kyougi.html",
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2024/240504/kyougi.html",
+        #"http://www.haaa.jp/~kobe/2023/03long3/web/kyougi.html",
+        #"http://www.haaa.jp/~kobe/2022/12ih/web/kyougi.html",
+        #"https://jaaftokushima.com/2022/koukousoutai/kyougi.html",
+        
+        #"https://gold.jaic.org/kagawa/2023/2023kagawaCh/kyougi.html",
+        "https://gold.jaic.org/kagawa/2023/2023koukou/2023shikokusoutai/tt.html",
+        "https://gold.jaic.org/kagawa/2023/2023kirokukai/tt.html",
+        
+        #"https://gold.jaic.org/kagawa/2024/2025touteki/tt.html",
+        
+        #"https://jaaftokushima.com/2021/anancity/open/kyougi.html",
+        #"http://www.haaa.jp/~koukou/2021/ih/html/rel063.html",
+        #"https://oaaa.jp/kotairen/results/2024/2_kiroku2/kyougi.html",
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/231104/kyougi.html"
+
+    ]
+    member_high=[
+        #"吉川　諒音",
+        #"石川　慎翔",
+        #"南本　寛茂",
+        "柳瀬　宏志郎",
+        "栁瀨　宏志郎"
+        #"藤村　修冬",
+        #"小川　真帆",
+        #"小山　大地",
+    ]
     # for url in urls:
-    #     run_real_time_v2(
+    # for url in urls:
+    #         #print(f"競技URL: {url}")
+    #         # time.sleep(2)  # API制限対策のため1秒待機
+    #         # 競技結果を取得
+    #         #print(f"競技結果を取得中: {url}")
+    #         #finsih_comp=run_real_time_v2(url=url, univ='大阪大', spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE, spread_sheet_ID_member=SPREADSHEET_ID_MEMBER, creds_dict=creds_dict)
+    #         #print(f"競技結果取得完了: {url}")
+    #     finsih_comp=run_real_time_v2(
     #         url=url,
     #         univ='大阪大',
     #         spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
@@ -169,7 +210,15 @@ def main():
     #         creds_dict=creds_dict,
     #         announce_discord=False
     #     )
-    # member_list= load_member_list()
+    #     # finsih_comp=run_real_time_players(
+    #     #     url=url,
+    #     #     player_names=member_high,
+    #     #     spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
+    #     #     creds_dict=creds_dict,
+    #     #     announce_discord=False
+    #     # )
+
+    member_list= load_member_list()
     # print(member_list)
     # for member in member_list:
     #     #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")

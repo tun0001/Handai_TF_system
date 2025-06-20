@@ -398,10 +398,25 @@ def member_best_to_sheet(
         except gspread.exceptions.WorksheetNotFound:
             print(f"Member sheet '{member}' not found in spreadsheet '{spreadsheet_id_member}'.")
             continue
-        data= member_sheet.get_all_values()
+        data = member_sheet.get_all_values()
         df_member = pd.DataFrame(data[1:], columns=data[0])
-        df_member['member_name']= member  # メンバー名を追加
-        event_list= df_member['event'].unique().tolist()
+        df_member['member_name'] = member  # メンバー名を追加
+        
+        # Check if 'event' column exists, if not, add processing to handle it
+        if 'event' not in df_member.columns:
+            # Try to create event column from other columns if available
+            if 'type' in df_member.columns and '種目' in df_member.columns:
+                df_member = get_event_type(df_member)
+                df_member = get_event_name(df_member)
+            elif '種目' in df_member.columns:
+                # Create a simple event column using the '種目' column
+                df_member['event'] = df_member['種目']
+            else:
+                # Skip this member if no event information is available
+                print(f"Skipping member {member}: No event information found")
+                continue
+                
+        event_list = df_member['event'].unique()
         for event in event_list:
             df_event = df_member[df_member['event'] == event]
             #SB（シーズンベスト）を抽出
@@ -636,7 +651,11 @@ def get_grade_column(df: pd.DataFrame) -> pd.DataFrame:
             if m:
                 return m.group(1)
             return ""
-        df.loc[:, '学年'] = df['氏名'].apply(extract_grade)
+        # Create the column if it doesn't exist
+        if '学年' not in df.columns:
+            df['学年'] = ""
+        # Then assign values
+        df['学年'] = df['氏名'].apply(extract_grade)
         return df
     else:
         return df
@@ -895,11 +914,38 @@ def process_sheet(
     if not data or len(data) < 2:
         print("No data to sort.")
         return
-    
+   
     # ヘッダーを除いたデータ部分をDataFrameに変換
     df = pd.DataFrame(data[1:], columns=data[0])
+    #-----------
+    # 特定の大会に関連するレコードで記録が空の行を削除
+    # conference_names = [
+    #     "2024関西学生陸上競技種目別選手権大会",
+    #     "2023関西学生陸上競技種目別選手権大会"
+    # ]
+    
+    # # Check if '大会' and '記録' columns exist in the dataframe
+    # if '大会' in df.columns and '記録' in df.columns:
+    #     # Create mask for rows where 大会 is in conference_names AND 記録 is empty
+    #     # Check if any conference name is contained within each 大会 value (partial match)
+    #     mask = df['大会'].apply(lambda x: any(conf in x for conf in conference_names)) & ((df['記録'].isna()) | (df['記録'] == ""))
+        
+    #     # Count rows that will be removed
+    #     rows_to_remove = mask.sum()
+    #     if rows_to_remove > 0:
+    #         print(f"Removing {rows_to_remove} rows with empty records from specified competitions")
+            
+    #     # Keep rows that don't match the condition (inverse of mask)
+    #     df = df[~mask]
+
+
+    #-----------
+
+
     if '記録(公式)' in df.columns:
-        df["記録"]=df["記録(公式)"]
+        # Only update records where 記録(公式) has a value (is not empty)
+        mask = (df['記録(公式)'].notna()) & (df['記録(公式)'] != "")
+        df.loc[mask, "記録"] = df.loc[mask, "記録(公式)"]
 
     
     df_1=remove_duplicates_from_df(df)  # 重複行を削除
