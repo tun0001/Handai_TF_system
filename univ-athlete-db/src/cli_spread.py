@@ -173,8 +173,8 @@ def main():
         #"https://jaaftokushima.com/2022/koukousoutai/kyougi.html",
         
         #"https://gold.jaic.org/kagawa/2023/2023kagawaCh/kyougi.html",
-        "https://gold.jaic.org/kagawa/2023/2023koukou/2023shikokusoutai/tt.html",
-        "https://gold.jaic.org/kagawa/2023/2023kirokukai/tt.html",
+        # "https://gold.jaic.org/kagawa/2023/2023koukou/2023shikokusoutai/tt.html",
+        # "https://gold.jaic.org/kagawa/2023/2023kirokukai/tt.html",
         
         #"https://gold.jaic.org/kagawa/2024/2025touteki/tt.html",
         
@@ -182,20 +182,23 @@ def main():
         #"http://www.haaa.jp/~koukou/2021/ih/html/rel063.html",
         #"https://oaaa.jp/kotairen/results/2024/2_kiroku2/kyougi.html",
         #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/231104/kyougi.html"
+        #"https://gold.jaic.org/osaka/2023/osk_champ/tt.html",
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/230827/tt.html"
 
     ]
     member_high=[
         #"吉川　諒音",
         #"石川　慎翔",
         #"南本　寛茂",
-        "柳瀬　宏志郎",
-        "栁瀨　宏志郎"
+        # "柳瀬　宏志郎",
+        # "栁瀨　宏志郎"
         #"藤村　修冬",
         #"小川　真帆",
         #"小山　大地",
+        "後藤　耀"
     ]
-    # for url in urls:
-    # for url in urls:
+    # # for url in urls:
+    # for url in urls[:5]:
     #         #print(f"競技URL: {url}")
     #         # time.sleep(2)  # API制限対策のため1秒待機
     #         # 競技結果を取得
@@ -209,26 +212,27 @@ def main():
     #         spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
     #         creds_dict=creds_dict,
     #         announce_discord=False
-    #     )
-    #     # finsih_comp=run_real_time_players(
-    #     #     url=url,
-    #     #     player_names=member_high,
-    #     #     spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
-    #     #     creds_dict=creds_dict,
-    #     #     announce_discord=False
-    #     # )
+    #    )
+    for url in urls_high:
+        finsih_comp=run_real_time_players(
+            url=url,
+            player_names=member_high,
+            spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
+            creds_dict=creds_dict,
+            announce_discord=False
+        )
 
     member_list= load_member_list()
-    # print(member_list)
-    # for member in member_list:
-    #     #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
-    #     time.sleep(2)  # API制限対策のため1秒待機
-    #     print(f"メンバー: {member}")
-    #     process_sheet(
-    #         spreadsheet_id=SPREADSHEET_ID_MEMBER,
-    #         sheet_name=member,
-    #         creds_dict=creds_dict
-    #     )
+    print(member_list)
+    for member in member_list[:10]:
+        #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
+        time.sleep(2)  # API制限対策のため1秒待機
+        print(f"メンバー: {member}")
+        process_sheet(
+            spreadsheet_id=SPREADSHEET_ID_MEMBER,
+            sheet_name=member,
+            creds_dict=creds_dict
+        )
     member_best_to_sheet(
         spreadsheet_id_member=SPREADSHEET_ID_MEMBER,
         spreadsheet_id_best=SPREADSHEET_ID_BEST,

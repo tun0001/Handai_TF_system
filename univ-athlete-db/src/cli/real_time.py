@@ -370,7 +370,7 @@ def run_real_time_players(url, spread_sheet_ID_member,player_names, creds_dict, 
             #print("種目のURL:", url)
             event_url = urljoin(base_url, url)
             #大学名で探索して，速報を取得．
-            html_event= fetch_html_soup(event_url)
+            html_event= fetch_html(event_url)
             #種目の詳細を取得
             for player_name in player_names:
                 result=parse_event_detail(html_event,player_name=player_name,univ=None)

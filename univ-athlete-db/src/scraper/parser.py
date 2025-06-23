@@ -120,22 +120,8 @@ def parse_player_name(name):
         return ''
     return jp_name
 
-# def parse_event_detail_pd(url, player_name=None, univ=None):
-#     #url = "https://example.com/page.html"  # URLまたはローカルのHTMLファイルのパス
-#     # URLからHTMLを取得し、Shift_JISでデコードしてからテーブルをパース
-#     resp = requests.get(url, timeout=10)
-#     soup = BeautifulSoup(resp.content, 'html.parser')  # content を渡すと meta charset を自動解析
-#     html = soup.prettify()  # デコード済み HTML
-#     dfs = pd.read_html(html, flavor='lxml')
 
-#     # dfs は DataFrame のリスト（1ページに複数テーブルある可能性がある）
-#     #print(dfs)
-#     #print(dfs.columns)
-#     df = dfs[1]  # 最初のテーブルだけ取得
-#     df_head= dfs[0]
-#     print(df)  # 2行目から4行目まで表示
-#     #print(df_head)  # 2行目から4行目まで表示
-#     #print(df.columns)  # カラム名を表示
+
     
 #     #print(df.head(4))
 
@@ -241,15 +227,17 @@ def parse_event_detail(html, player_name=None, univ=None):
             player_name = player_name.replace('　', '').replace(' ', '')
             match_player = player_name is not None and player_name in name_val
         
-        if univ == '大阪大':
-            # Check for 大阪大 while excluding specific other universities
-            univ_val_nospace = univ_val.replace(' ', '').replace('　', '')
-            # Ensure we're matching 大阪大 correctly by checking boundaries
-            # Check for exact match or pattern where 大阪大 is followed by 学
-            match_univ = ('大阪大' in univ_val or univ_val == '大阪大') and \
-            not any(x in univ_val for x in ['大阪大谷', '東大阪大', '大阪体育大', '大阪大阪桐蔭'])
-        else:
-            match_univ = univ is not None and univ_val.startswith(univ)
+        match_univ= affiliation_contains_univ(univ_val, univ)
+            
+        # if univ == '大阪大':
+        #     # Check for 大阪大 while excluding specific other universities
+        #     univ_val_nospace = univ_val.replace(' ', '').replace('　', '')
+        #     # Ensure we're matching 大阪大 correctly by checking boundaries
+        #     # Check for exact match or pattern where 大阪大 is followed by 学
+        #     match_univ = ('大阪大' in univ_val or univ_val == '大阪大') and \
+        #     not any(x in univ_val for x in ['大阪大谷', '東大阪大', '大阪体育大', '大阪大阪桐蔭'])
+        # else:
+        #     match_univ = univ is not None and univ_val.startswith(univ)
         
         # match_player = player_name is not None and row_dict.get('氏名', row_dict.get('選手名', '')) == player_name
         # match_univ = univ is not None and row_dict.get('所属', row_dict.get('大学名', '')) == univ

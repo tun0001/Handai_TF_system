@@ -394,7 +394,7 @@ def member_best_to_sheet(
         try:
             member_sheet = member_sheets.worksheet(member)
             print(member)
-            time.sleep(1.5)  # API制限を避けるために少し待機
+            time.sleep(2)  # API制限を避けるために少し待機
         except gspread.exceptions.WorksheetNotFound:
             print(f"Member sheet '{member}' not found in spreadsheet '{spreadsheet_id_member}'.")
             continue
@@ -480,33 +480,143 @@ def member_best_to_sheet(
         df_season_records = pivot_records
 
 
-        write_to_new_sheet(
+        overwrite_sheet(
             spreadsheet_id=spreadsheet_id_best,
             sheet_name=sheet_name,
             data=df_season_records,
             cred_dict=creds_dict
         )
+
+
+        # write_to_new_sheet(
+        #     spreadsheet_id=spreadsheet_id_best,
+        #     sheet_name=sheet_name,
+        #     data=df_season_records,
+        #     cred_dict=creds_dict
+        # )
     
+def overwrite_sheet(
+    spreadsheet_id: str,
+    sheet_name: str,
+    data: pd.DataFrame | list[list],
+    cred_dict: dict,
+    num_rows: int = 100,
+    num_cols: int = 50,
+):
+    """
+    シートを丸ごとクリアして data を上書きします。
+    • data: pandas.DataFrame または list[list]（1行目がヘッダー）
+    """
+    # DataFrame以外は list[list] とみなす
+    if isinstance(data, pd.DataFrame):
+        df = data.reset_index(drop=True)
+        df = df.where(pd.notnull(df), "")
+        payload = [df.columns.tolist()] + df.values.tolist()
+    else:
+        payload = data
 
+    # 認証
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
+    client = gspread.authorize(creds)
 
+    # シート取得 or 作成
+    sh = client.open_by_key(spreadsheet_id)
+    try:
+        ws = sh.worksheet(sheet_name)
+    except gspread.exceptions.WorksheetNotFound:
+        ws = sh.add_worksheet(title=str(sheet_name), rows=str(num_rows), cols=str(num_cols))
 
+    # 上書き（クリア→更新）
+    ws.clear()
+    ws.update("A1", payload)
 
-    
 
 #--------------
 def sort_dataframe_by_date(df: pd.DataFrame) -> pd.DataFrame:
     """
     '日付'列から年・月・日を抽出して昇順ソートしたDataFrameを返す
+    YYYY年MM月DD日形式とYYYY/MM/DD形式の両方に対応
     """
     df = df.copy()
-    df['年'] = df['日付'].str.extract(r'(\d{4})年')
-    df['月'] = df['日付'].str.extract(r'(\d{1,2})月')
-    df['日'] = df['日付'].str.extract(r'(\d{1,2})日')
-    df['年'] = df['年'].astype(int)
-    df['月'] = df['月'].astype(int)
-    df['日'] = df['日'].astype(int)
+    
+    # Extract year, month, day components
+    # Handle both formats: "YYYY年MM月DD日" and "YYYY/MM/DD"
+    def extract_year(date_str):
+        if not isinstance(date_str, str):
+            return None
+        # Try Japanese format first
+        jp_match = re.search(r'(\d{4})年', date_str)
+        if jp_match:
+            return int(jp_match.group(1))
+        # Try slash format
+        slash_match = re.search(r'(\d{4})/\d{1,2}/\d{1,2}', date_str)
+        if slash_match:
+            return int(slash_match.group(1))
+        return None
+    
+    def extract_month(date_str):
+        if not isinstance(date_str, str):
+            return None
+        # Try Japanese format first
+        jp_match = re.search(r'(\d{1,2})月', date_str)
+        if jp_match:
+            return int(jp_match.group(1))
+        # Try slash format
+        slash_match = re.search(r'\d{4}/(\d{1,2})/\d{1,2}', date_str)
+        if slash_match:
+            return int(slash_match.group(1))
+        return None
+    
+    def extract_day(date_str):
+        if not isinstance(date_str, str):
+            return None
+        # Try Japanese format first
+        jp_match = re.search(r'(\d{1,2})日', date_str)
+        if jp_match:
+            return int(jp_match.group(1))
+        # Try slash format
+        slash_match = re.search(r'\d{4}/\d{1,2}/(\d{1,2})', date_str)
+        if slash_match:
+            return int(slash_match.group(1))
+        return None
+    
+    # Apply the extraction functions
+    df['年'] = df['日付'].apply(extract_year)
+    df['月'] = df['日付'].apply(extract_month)
+    df['日'] = df['日付'].apply(extract_day)
+    
+    # Convert to numeric and handle NaN values
+    df['年'] = pd.to_numeric(df['年'], errors='coerce').fillna(0).astype(int)
+    df['月'] = pd.to_numeric(df['月'], errors='coerce').fillna(0).astype(int)
+    df['日'] = pd.to_numeric(df['日'], errors='coerce').fillna(0).astype(int)
+    # Sort the DataFrame by date components
     df_sorted = df.sort_values(by=['年', '月', '日'], ascending=True)
     return df_sorted
+
+def affiliation_contains_univ(univ_val: str, target_univ: str) -> bool:
+    """
+    所属（univ_val）に target_univ が含まれるか判定する。
+    • 基本は部分一致だが、「大阪大」の場合は
+      “大阪大”を含むが“東大阪大”“大阪体育大”等を除外。
+    """
+    # 空白を統一
+    text = univ_val
+    if not text or not target_univ:
+        return False
+
+    if target_univ == '大阪大':
+        # “大阪大”を含み、以下の大学は除外
+        excludes = ['東大阪大', '大阪体育大', '大阪大谷', '大阪大阪桐蔭']
+        if '大阪大' in text and not any(exc in text for exc in excludes):
+            return True
+        return False
+
+    # それ以外は単純部分一致
+    return target_univ in text
 
 def get_season(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -559,7 +669,7 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
                 "5000mW", "10000mW", "20kW", "50kmW"
             ]
             event_hardle_list = [
-            "110mH", "300mH", "400mH", "3000mSC"
+            "110mH","100mH", "300mH", "400mH", "3000mSC"
             ]
             event_relay_list = [
             "4x100mR", "4x400mR", "4x200mR", "4x800mR"
@@ -655,7 +765,30 @@ def get_grade_column(df: pd.DataFrame) -> pd.DataFrame:
         if '学年' not in df.columns:
             df['学年'] = ""
         # Then assign values
-        df['学年'] = df['氏名'].apply(extract_grade)
+            df = df.copy()  # Ensure we are working with a copy
+            # Apply the extraction function to the '氏名' column
+            df['学年'] = df['氏名'].apply(extract_grade)
+        return df
+    else:
+        return df
+
+def get_univ_name(df: pd.DataFrame,univ_name) -> pd.DataFrame:
+    """
+    '所属'列から大学名を抽出してDataFrameを返す
+    """
+    if '所属' in df.columns:
+        # 所属から大学、高校、中学を判定する関数
+        def extract_univ_name(affiliation):
+            if not isinstance(affiliation, str):
+                return ""
+            
+            # 大学名が含まれているか確認
+            if affiliation_contains_univ(affiliation, univ_name):
+                return univ_name
+            else:
+                return "その他"
+        
+        df['大学名'] = df['所属'].apply(extract_univ_name)
         return df
     else:
         return df
@@ -882,8 +1015,6 @@ def get_compare_record(df: pd.DataFrame) -> pd.DataFrame:
     else:
         return df
 
-
-
 def process_sheet(
     spreadsheet_id: str,
     sheet_name: str,
@@ -959,10 +1090,11 @@ def process_sheet(
     df_8 = get_event_name(df_7)  # 種目名を抽出
     df_9 = get_official_record(df_8)  # 公認記録を抽出
     df_10 = get_compare_record(df_9)  # 比較用の記録を抽出
-    df_11 = add_pb_column(df_10)  # PB列を追加
-    df_12 = add_sb_column(df_11)  # SB列を追加
+    df_11 = get_univ_name(df_10, "大阪大")  # 大学名を抽出
+    df_12 = add_pb_column(df_11)  # PB列を追加
+    df_13 = add_sb_column(df_12)  # SB列を追加
     
-    df_sorted = df_12
+    df_sorted = df_13
     # ソート用のカラムを削除
     #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
 
@@ -1187,16 +1319,54 @@ def choose_best_sheet(
     worksheet_best.clear()
     worksheet_best.update('A1', [df_member.columns.tolist(), best_row.tolist()])
 
+def load_sheet(
+    spreadsheet_id: str,
+    sheet_name: str,
+    cred_dict: dict | None = None,
+):
+    """
+    指定されたスプレッドシートの指定シートを読み込む
+    cred_dict: 認証情報の辞書形式
+    """
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
+    client = gspread.authorize(creds)
+    
+    sh = client.open_by_key(spreadsheet_id)
+    
+    try:
+        worksheet = sh.worksheet(sheet_name)
+    except gspread.exceptions.WorksheetNotFound:
+        print(f"Worksheet '{sheet_name}' not found in spreadsheet '{spreadsheet_id}'.")
+        return None
+    
+    # シートの全データ取得（2次元リスト）
+    data = worksheet.get_all_values()
+    
+    if not data or len(data) < 2:
+        print("No data found in the sheet.")
+        return None
+    
+    # ヘッダーを除いたデータ部分をDataFrameに変換
+    df = pd.DataFrame(data[1:], columns=data[0])
+    
+    return df
+
 if __name__ == "__main__":
     # サンプルデータ: '氏名'と'記録'列を含む
     df = pd.DataFrame([
-        {'氏名': "那木　悠右 (1)Yusuke NAGI (03)", '記録': '6m34+2.0 (追風)'},
-        {'氏名': "小林  恒方(M3)",'event':'三段跳', '記録': '333+2.5 (向風)','2回':'6m73+2.8','3回':'6m74+2.8'},
+        {'氏名': "那木　悠右 (1)Yusuke NAGI (03)", '記録': '6m34+2.0 (追風)','日付': '2024/05/01', '種目': '走幅跳'},
+        {'氏名': "小林  恒方(M3)",'event':'三段跳', '記録': '333+2.5 (向風)','2回':'6m73+2.8','3回':'6m74+2.8','日付':'2024年4月39日'},
         {'氏名': "田中 太郎", '記録': '15.20[44.4]'},
         {'氏名': "", '記録': '10.94[10.933]'},
         {'氏名': "佐藤 花子", '記録': '1:00.37[ 1:00.370]', '風': '0.0'},
     ])
     #df = get_wind_from_record(df)
+    df = sort_dataframe_by_date(df)  # 日付でソート
     df = get_grade_column(df)
     df = get_true_record(df)
     df = get_official_record(df)
