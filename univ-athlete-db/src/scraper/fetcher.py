@@ -6,6 +6,8 @@ import pandas as pd
 import argparse
 import numpy as np
 import os
+from bs4 import BeautifulSoup
+
 
 """
 • fetcher  
@@ -18,7 +20,21 @@ import os
 def check_url_exists(url):
     try:
         response = requests.head(url, allow_redirects=True, timeout=5)
-        return response.status_code == 200
+        # 200: OK, 403: Forbidden, 405: Method Not Allowed も存在とみなす
+        if response.status_code in [200, 403, 405]:
+            # Content-Typeがtext/htmlならTrue
+            content_type = response.headers.get('Content-Type', '')
+            if 'text/html' in content_type:
+                return True
+        # 一部サーバーはHEADを許可しないのでGETも試す
+        if response.status_code == 404:
+            return False
+        response = requests.get(url, allow_redirects=True, timeout=5)
+        if response.status_code in [200, 403]:
+            content_type = response.headers.get('Content-Type', '')
+            if 'text/html' in content_type:
+                return True
+        return False
     except requests.RequestException:
         return False
 
@@ -38,7 +54,7 @@ def find_competition_link(output_file="competition_urls.txt"):
         "GK1",  # 学連記録会1
         "GK2",  # 学連記録会2
         "KYOKA",  # 長距離強化記録会
-        "SYUMOKU",  # 種目別選手権
+        "SHUMOKU",  # 種目別選手権
         'ISE',  # 全日本駅伝予選会
         'NEW',  # 関西新人
         'KANJO',  # 関西女子駅伝
@@ -103,16 +119,56 @@ def get_base_url(url):
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path.rsplit('/', 1)[0]}/"
     return base_url
 
-def fetch_html(url):
-    """Fetch HTML content from the specified URL."""
+def fetch_html(url: str, timeout: float = 10.0) -> str | None:
+    """
+    URL から HTML を取得し、以下の特徴を持ちます:
+    - Forbidden(403) が返ってきたら User-Agent を変えて再試行
+    - 適切に文字コードを扱い文字化けを防止
+    - エラー時は空文字を返す
+    """
+    # 初回リクエスト用ヘッダー
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
+        "Referer": url.rsplit('/', 1)[0] + '/'
+    }
+
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        # 明示的に Shift_JIS としてデコード
-        response.encoding = 'shift_jis'
-        return response.text
+        resp = requests.get(url, headers=headers, timeout=timeout)
+        resp.raise_for_status()
+    except requests.HTTPError as e:
+        # 403 Forbidden の場合だけ再試行
+        if resp.status_code == 403:
+            print(f"[WARN] 403 Forbidden, retrying {url} with alternate UA")
+            headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+            try:
+                resp = requests.get(url, headers=headers, timeout=timeout)
+                resp.raise_for_status()
+            except Exception:
+                print(f"[ERROR] Still forbidden: {url}")
+                return ""
+        else:
+            print(f"[WARN] HTTP error for {url}: {e}")
+            return ""
     except requests.RequestException as e:
-        raise RuntimeError(f"Error fetching data from {url}: {e}")
+        print(f"[WARN] fetch_html failed for {url}: {e}")
+        return ""
+
+    # 文字化け防止: BeautifulSoup にバイト列を渡して<meta>等からエンコーディング自動判別
+    try:
+        # 明示的なエンコーディング指定なしでBeautifulSoupにバイト列を渡す
+        soup = BeautifulSoup(resp.content, "html.parser", from_encoding=None)
+        return soup.prettify()
+    except Exception as e:
+        print(f"[WARN] BeautifulSoup parsing failed: {e}")
+        
+        # フォールバック: requests の推定エンコーディングを使用
+        try:
+            resp.encoding = resp.apparent_encoding
+            return resp.text
+        except Exception as e:
+            print(f"[WARN] Fallback decoding failed for {url}: {e}")
+            return ""
 
 def fetch_url_univ(url,univ):
     # get_base_url関数を使用して、指定されたURLからベースURLを取得

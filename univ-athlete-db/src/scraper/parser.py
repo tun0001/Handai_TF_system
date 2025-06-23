@@ -97,38 +97,33 @@ def parse_all_event_finish(html, event_name, betsu, kubun):
 def parse_player_name(name):
     """
     選手名をパースして日本語名部分のみを返す
-    例: "小林 恒方(M2)Tsunemasa Kobyashi" → "小林 恒方"
+    例: "小林 恒方(M2)Tsunemasa Kobyashi" → "小林　恒方"
+    
+    濱田　惠美
+    濱田　恵美
+
+    石谷　峻
+    石谷　崚
+
+    奥野　賢汰
+    奥野　賢汰
     """
     # 日本語名部分のみ抽出（漢字・ひらがな・カタカナ・全角スペース・半角スペースのみ）
     m = re.match(r'^([\u3000-\u303F\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\s]+)', name)
     jp_name = m.group(1).strip() if m else name
     # 括弧内(M2)などを除去
     jp_name = re.sub(r'[\(\（][^)\）]*[\)\）]', '', jp_name).strip()
+    # 姓名の間の空白を全て全角スペースに統一
+    jp_name = re.sub(r'[\s\u3000]+', '　', jp_name)
     # 全て空白なら空文字を返す
     if not jp_name or jp_name.isspace():
         return ''
     return jp_name
 
-def parse_event_detail_pd(url, player_name=None, univ=None):
-    #url = "https://example.com/page.html"  # URLまたはローカルのHTMLファイルのパス
-    # URLからHTMLを取得し、Shift_JISでデコードしてからテーブルをパース
-    resp = requests.get(url)
-    resp.raise_for_status()
-    resp.encoding = 'shift_jis'
-    html = resp.text
-    # flavorは環境に合わせて'lxml'や'html5lib'を指定
-    dfs = pd.read_html(html, flavor='lxml')
 
-    # dfs は DataFrame のリスト（1ページに複数テーブルある可能性がある）
-    #print(dfs)
-    #print(dfs.columns)
-    df = dfs[1]  # 最初のテーブルだけ取得
-    df_head= dfs[0]
-    print(df)  # 2行目から4行目まで表示
-    #print(df_head)  # 2行目から4行目まで表示
-    #print(df.columns)  # カラム名を表示
+
     
-    #print(df.head(4))
+#     #print(df.head(4))
 
 def parse_event_detail(html, player_name=None, univ=None):
     """
@@ -136,7 +131,20 @@ def parse_event_detail(html, player_name=None, univ=None):
     テーブルのカラム名に依存せず、カラム名と値のペアで辞書化する
     colspanによるカラムずれも考慮
     """
-    soup = BeautifulSoup(html, 'html.parser')
+    if isinstance(html, bytes):
+        # Try multiple encodings with proper error handling
+        for encoding in ['utf-8', 'shift_jis', 'euc_jp', 'iso-2022-jp']:
+            try:
+                html = html.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            # If all decodings fail, use the most permissive approach as fallback
+            html = html.decode('utf-8', errors='replace')
+    
+    # Create the BeautifulSoup object with explicit encoding handling
+    soup = BeautifulSoup(html, 'html.parser', from_encoding='utf-8')
     # 大会情報
     title_h3 = soup.find('table', class_='title').find('h3').get_text(separator=' ', strip=True)
     # 日付
@@ -173,7 +181,7 @@ def parse_event_detail(html, player_name=None, univ=None):
         span = int(th.get('colspan', 1))
         # colspanが2なら同じカラム名を2回追加
         headers.extend([text] * span)
-    print(headers)
+    #print(headers)
 
     results = []
     for row in table.find_all('tr')[1:]:
@@ -212,11 +220,24 @@ def parse_event_detail(html, player_name=None, univ=None):
             row_dict.get('大学名') or
             row_dict.get('チーム／メンバー', '')
         )
-        match_player = player_name is not None and player_name in name_val
-        if univ == '大阪大':
-            match_univ = univ_val.startswith(univ) and "大阪大谷" not in univ_val
-        else:
-            match_univ = univ is not None and univ_val.startswith(univ)
+        name_val = parse_player_name(name_val)  # 日本語名部分のみ抽出
+        name_val = name_val.replace('　', '').replace(' ', '')  # 全角・半角スペース除去
+        #print(name_val,player_name)
+        if player_name:
+            player_name = player_name.replace('　', '').replace(' ', '')
+            match_player = player_name is not None and player_name in name_val
+        
+        match_univ= affiliation_contains_univ(univ_val, univ)
+            
+        # if univ == '大阪大':
+        #     # Check for 大阪大 while excluding specific other universities
+        #     univ_val_nospace = univ_val.replace(' ', '').replace('　', '')
+        #     # Ensure we're matching 大阪大 correctly by checking boundaries
+        #     # Check for exact match or pattern where 大阪大 is followed by 学
+        #     match_univ = ('大阪大' in univ_val or univ_val == '大阪大') and \
+        #     not any(x in univ_val for x in ['大阪大谷', '東大阪大', '大阪体育大', '大阪大阪桐蔭'])
+        # else:
+        #     match_univ = univ is not None and univ_val.startswith(univ)
         
         # match_player = player_name is not None and row_dict.get('氏名', row_dict.get('選手名', '')) == player_name
         # match_univ = univ is not None and row_dict.get('所属', row_dict.get('大学名', '')) == univ
@@ -583,7 +604,7 @@ def parse_each_event_name_kaisizikoku(html):
                 event_type = 'Mult'
             elif '跳' in event_name:
                 event_type = 'Jump'
-            elif 'R' in event_name or 'Ｒ' in event_name:
+            elif 'R' in event_name or 'Ｒ' in event_name or '×' in event_name or'x' in event_name:
                 event_type = 'Relay'
             elif '投' in event_name:
                 event_type = 'Throw'

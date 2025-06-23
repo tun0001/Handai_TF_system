@@ -14,11 +14,27 @@ import time
 def main():
     # Secrets から読み込んだ JSON をデコード
     # creds_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-    creds_env = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-    # 環境変数から取得した場合は文字列 → dict に変換
-    creds_str = creds_env.replace('\\n', '\n')
-    creds_dict = json.loads(creds_str)
-        # 直接コードにベタ書きした dict を使う場合
+    # creds_env = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+    # # 環境変数から取得した場合は文字列 → dict に変換
+    # creds_str = creds_env.replace('\\n', '\n')
+    # creds_dict = json.loads(creds_str)
+    #     # 直接コードにベタ書きした dict を使う場合
+    creds_dict = {
+    "type": "service_account",
+    "project_id": "handai-tf-system-control",
+    "private_key_id": "e93e656c7de092d7e456e63a0b98fae1e4673c07",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQD3QUZWjLx8Ewx2\nBoRL58EewurIRB9oSIrUTepVTtqcbGIp9BB2FQq6N2Ii4w2zx5AzgrmTDSactOQt\nLHMyO94OVwxzXAMVPeWJg1S3rwwWkrNSMocqT6RZ6YbeURYkqJIkT8CTSAarOFVu\nBuQkbdVLNFEgmRV+dXTMnplqFbNryg+ae3e6jIzAlkVZLLCge+2Av6dLzIT9C7FN\nB4+TKHnRCcNGgTGqqgBL6NEVwbbJDcTLddyvmbrEzsYg1nbxWallWwUBQAKWHCDT\nLAUOqQadfjzzqIenwRYd/lEX3AsXz4Fcnu1o+LYtVq9VBoLvoYlOtyPDMuY/XEdC\nb/v+PcUbAgMBAAECggEAYVNjYYwyYVCKNicoikxmezpUepI+Hql3ZExrMjtA2BPd\nrA/zLtfnihdk3MCtUxf5zhzl+VlS2pplutZlXd+s784aC4qreAAOS0vT3B3eT0Bd\nr7xN8jy5P98phHc8lR95rytpbVALt/gLwKybvy8wp1KnoIJBsK6BVE4Vq2lxX7q6\nwu8L5XjvoNcuifvtcMfaI6l6gGivX0Npio3W0H3eb/HSikAsqzRE84QbynC05ar0\nhE2Cjqj0w+TyXz2efRdejpmELnbxb8uTh9/ZR2/q863aK2B9VGhwmagaKNJK1oPG\neIgFyf1mTm23f0/rRTGLKKiHgdcQRCPd494TLsT3iQKBgQD/+g6Eiv4ANZ94k+3i\nB7xNeLzf9HE8x+XxhC6GzfJCimYpnMF2Lv8zJnUk94Qr6WgasRpJWXUgtpCw9s8m\nf7HVykKJLytoiZMG98FsfyhWAIbpP2RyhZRvpoKnpPP6dL1icKHjyFlH9wZJ2+9I\n/D96b1h1CEcqvyHmxwZqipiyVwKBgQD3RwP6u4V82xRWuip6rOaJVzwqWbdvYvoY\n1u+B9Foo98iFcqpqzNfX2ySgpqA6y80ji7wnWxHmxE3rC+Fyxc81AbIDr2+Sm9zL\nMB7qshWo3eX97Ae9Zk/36Lb1G36hN2IinEHOIpc7DDAgHc8bBINZMEpOw9ObZVp/\n1+kyDrCw3QKBgQCS2QRNG2O+AQU8ajj1C5UGKLbKD/SKdu8+T6NVaH6Ll9QmGSyP\nPUTgNjbL/0cO3fcAIQvAepaMLs/xBZYvMuB1knP7OVlAvnPfcnC/am9cby72Toy0\neld+edrIjAP/cctX1t+4yi4V7+vmoUqz5yoPdiMb+KTDLCUpvJG8u0gAPwKBgFhS\nFSnJMLSXy3vuop2OhAkqD2NRCCPQxmN44bMZA9r+JbEEc7oR0EZZD4wR98kIYg0A\nLAQikxJJq0r4w12rKYdVQ6/tSXykDwjD90b8tJ/MIgm/9EPB924kwLRrTZ9nmLWj\n+h0WXc3JXKcb/o0333JLvT7E0x/944UmKTSn6pRBAoGAYV91UZmNBYm96GMwYUIf\nGYI/e404NiT0nUHsau8YXMvnA4+p0XePTP1euhq9Dfp/mDy9V/X7Y6evRblnLHf5\nf0U1qz1Qkp7OTQa+Rgh4FAe2EC9NpyB4ihwTrVvCdz0s6KX+mt90JtSUrc2Vzr2A\n0OsngqRW7TWyhG3UvYxNWMU=\n-----END PRIVATE KEY-----\n",
+    "client_email": "edit-tf-schedule@handai-tf-system-control.iam.gserviceaccount.com",
+    "client_id": "115271653994163090816",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/edit-tf-schedule%40handai-tf-system-control.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+    }
+
+    
+
 
     # 認証スコープ
 
@@ -29,7 +45,10 @@ def main():
     # スプレッドシートを開く
     SPREADSHEET_ID_MEMBER = os.getenv('SPREADSHEET_ID_MEMBER')
     SPREADSHEET_ID_CONFERENCE = os.getenv('SPREADSHEET_ID_CONFERENCE')
-    
+    SPREADSHEET_ID_BEST = os.getenv('SPREADSHEET_ID_BEST')
+    SPREADSHEET_ID_MEMBER="1vN-qqu4RB-Ukp2tR5WDQJB9P-uRPgGp3L6MDz2XfPAE"
+    SPREADSHEET_ID_CONFERENCE="1yAI2wwNWBWdWfrbaiXA5EvjuKoHCztwjAnUYRkNNbPw"
+    SPREADSHEET_ID_BEST="1ODPNaPIrphI1NV8ZXI5MLM6arKjKnVa7RxounPeX9CM"
     worksheet_conference = client.open_by_key(SPREADSHEET_ID_CONFERENCE).sheet1
     worksheet_member = client.open_by_key(SPREADSHEET_ID_MEMBER).sheet1
     
@@ -42,6 +61,21 @@ def main():
         data=data,
         cred_dict=creds_dict  # ここでは直接 creds_dict を使うので None
         )
+    #---
+    conference_title=["リアルタイム競技会一覧"]
+    member_title=["記録申請フォーム"]
+    # reset_sheets(
+    #     spreadsheet_id=SPREADSHEET_ID_CONFERENCE,
+    #     sheet_names=conference_title,
+    #     cred_dict=creds_dict
+    # )
+    # reset_sheets(
+    #     spreadsheet_id=SPREADSHEET_ID_MEMBER,
+    #     sheet_names=member_title,
+    #     cred_dict=creds_dict
+    # )
+
+    #---
 
 
     # 1行目（ヘッダー）に「ステータス」「担当者」を追加
@@ -124,29 +158,86 @@ def main():
         )
     ]
     print(df_todo.head(10))  # 最初の10行を表示
-    
-    member_list= load_member_list()
-    print(member_list)
-    # for member in member_list:
-    #     #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
-    #     time.sleep(1)  # API制限対策のため1秒待機
-    #     print(f"メンバー: {member}")
-    #     deduplicate_sheet(
-    #         spreadsheet_id=SPREADSHEET_ID_MEMBER,
-    #         sheet_name=member,
-    #         cred_dict=creds_dict
-    #     )
 
     urls = load_com_urls()
-    for url in urls:
-        run_real_time_v2(
+    member_to_find=['国吉　遼河','百濃　隼大','中嶋　遼']
+    # urls=[
+    #     "https://gold.jaic.org/icaak/record/2024/14_SHUMOKU/kyougi.html",
+    #      "https://gold.jaic.org/icaak/record/2023/14_SHUMOKU/kyougi.html"
+    #      ]
+    urls_high=[
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2024/240504/kyougi.html",
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2024/240504/kyougi.html",
+        #"http://www.haaa.jp/~kobe/2023/03long3/web/kyougi.html",
+        #"http://www.haaa.jp/~kobe/2022/12ih/web/kyougi.html",
+        #"https://jaaftokushima.com/2022/koukousoutai/kyougi.html",
+        
+        #"https://gold.jaic.org/kagawa/2023/2023kagawaCh/kyougi.html",
+        # "https://gold.jaic.org/kagawa/2023/2023koukou/2023shikokusoutai/tt.html",
+        # "https://gold.jaic.org/kagawa/2023/2023kirokukai/tt.html",
+        
+        #"https://gold.jaic.org/kagawa/2024/2025touteki/tt.html",
+        
+        #"https://jaaftokushima.com/2021/anancity/open/kyougi.html",
+        #"http://www.haaa.jp/~koukou/2021/ih/html/rel063.html",
+        #"https://oaaa.jp/kotairen/results/2024/2_kiroku2/kyougi.html",
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/231104/kyougi.html"
+        #"https://gold.jaic.org/osaka/2023/osk_champ/tt.html",
+        #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/230827/tt.html"
+
+    ]
+    member_high=[
+        #"吉川　諒音",
+        #"石川　慎翔",
+        #"南本　寛茂",
+        # "柳瀬　宏志郎",
+        # "栁瀨　宏志郎"
+        #"藤村　修冬",
+        #"小川　真帆",
+        #"小山　大地",
+        "後藤　耀"
+    ]
+    # # for url in urls:
+    # for url in urls[:5]:
+    #         #print(f"競技URL: {url}")
+    #         # time.sleep(2)  # API制限対策のため1秒待機
+    #         # 競技結果を取得
+    #         #print(f"競技結果を取得中: {url}")
+    #         #finsih_comp=run_real_time_v2(url=url, univ='大阪大', spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE, spread_sheet_ID_member=SPREADSHEET_ID_MEMBER, creds_dict=creds_dict)
+    #         #print(f"競技結果取得完了: {url}")
+    #     finsih_comp=run_real_time_v2(
+    #         url=url,
+    #         univ='大阪大',
+    #         spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
+    #         spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
+    #         creds_dict=creds_dict,
+    #         announce_discord=False
+    #    )
+    for url in urls_high:
+        finsih_comp=run_real_time_players(
             url=url,
-            univ='大阪大',
-            spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
+            player_names=member_high,
             spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
             creds_dict=creds_dict,
             announce_discord=False
         )
+
+    member_list= load_member_list()
+    print(member_list)
+    for member in member_list[:10]:
+        #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
+        time.sleep(2)  # API制限対策のため1秒待機
+        print(f"メンバー: {member}")
+        process_sheet(
+            spreadsheet_id=SPREADSHEET_ID_MEMBER,
+            sheet_name=member,
+            creds_dict=creds_dict
+        )
+    member_best_to_sheet(
+        spreadsheet_id_member=SPREADSHEET_ID_MEMBER,
+        spreadsheet_id_best=SPREADSHEET_ID_BEST,
+        creds_dict=creds_dict
+    )
 
     for index, row in df_todo.iterrows():
         #print(f"大会名: {row['大会名']}, 開始日: {row['日付(開始日)']}, 終了日: {row['日付(終了日)']}")
