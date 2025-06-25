@@ -12,27 +12,14 @@ import time
 
 
 def main():
-    # Secrets から読み込んだ JSON をデコード
-    # creds_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-    # creds_env = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-    # # 環境変数から取得した場合は文字列 → dict に変換
-    # creds_str = creds_env.replace('\\n', '\n')
-    # creds_dict = json.loads(creds_str)
+    #Secrets から読み込んだ JSON をデコード
+    creds_json = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+    creds_env = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+    # 環境変数から取得した場合は文字列 → dict に変換
+    creds_str = creds_env.replace('\\n', '\n')
+    creds_dict = json.loads(creds_str)
     #     # 直接コードにベタ書きした dict を使う場合
-    creds_dict = {
-    "type": "service_account",
-    "project_id": "handai-tf-system-control",
-    "private_key_id": "e93e656c7de092d7e456e63a0b98fae1e4673c07",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQD3QUZWjLx8Ewx2\nBoRL58EewurIRB9oSIrUTepVTtqcbGIp9BB2FQq6N2Ii4w2zx5AzgrmTDSactOQt\nLHMyO94OVwxzXAMVPeWJg1S3rwwWkrNSMocqT6RZ6YbeURYkqJIkT8CTSAarOFVu\nBuQkbdVLNFEgmRV+dXTMnplqFbNryg+ae3e6jIzAlkVZLLCge+2Av6dLzIT9C7FN\nB4+TKHnRCcNGgTGqqgBL6NEVwbbJDcTLddyvmbrEzsYg1nbxWallWwUBQAKWHCDT\nLAUOqQadfjzzqIenwRYd/lEX3AsXz4Fcnu1o+LYtVq9VBoLvoYlOtyPDMuY/XEdC\nb/v+PcUbAgMBAAECggEAYVNjYYwyYVCKNicoikxmezpUepI+Hql3ZExrMjtA2BPd\nrA/zLtfnihdk3MCtUxf5zhzl+VlS2pplutZlXd+s784aC4qreAAOS0vT3B3eT0Bd\nr7xN8jy5P98phHc8lR95rytpbVALt/gLwKybvy8wp1KnoIJBsK6BVE4Vq2lxX7q6\nwu8L5XjvoNcuifvtcMfaI6l6gGivX0Npio3W0H3eb/HSikAsqzRE84QbynC05ar0\nhE2Cjqj0w+TyXz2efRdejpmELnbxb8uTh9/ZR2/q863aK2B9VGhwmagaKNJK1oPG\neIgFyf1mTm23f0/rRTGLKKiHgdcQRCPd494TLsT3iQKBgQD/+g6Eiv4ANZ94k+3i\nB7xNeLzf9HE8x+XxhC6GzfJCimYpnMF2Lv8zJnUk94Qr6WgasRpJWXUgtpCw9s8m\nf7HVykKJLytoiZMG98FsfyhWAIbpP2RyhZRvpoKnpPP6dL1icKHjyFlH9wZJ2+9I\n/D96b1h1CEcqvyHmxwZqipiyVwKBgQD3RwP6u4V82xRWuip6rOaJVzwqWbdvYvoY\n1u+B9Foo98iFcqpqzNfX2ySgpqA6y80ji7wnWxHmxE3rC+Fyxc81AbIDr2+Sm9zL\nMB7qshWo3eX97Ae9Zk/36Lb1G36hN2IinEHOIpc7DDAgHc8bBINZMEpOw9ObZVp/\n1+kyDrCw3QKBgQCS2QRNG2O+AQU8ajj1C5UGKLbKD/SKdu8+T6NVaH6Ll9QmGSyP\nPUTgNjbL/0cO3fcAIQvAepaMLs/xBZYvMuB1knP7OVlAvnPfcnC/am9cby72Toy0\neld+edrIjAP/cctX1t+4yi4V7+vmoUqz5yoPdiMb+KTDLCUpvJG8u0gAPwKBgFhS\nFSnJMLSXy3vuop2OhAkqD2NRCCPQxmN44bMZA9r+JbEEc7oR0EZZD4wR98kIYg0A\nLAQikxJJq0r4w12rKYdVQ6/tSXykDwjD90b8tJ/MIgm/9EPB924kwLRrTZ9nmLWj\n+h0WXc3JXKcb/o0333JLvT7E0x/944UmKTSn6pRBAoGAYV91UZmNBYm96GMwYUIf\nGYI/e404NiT0nUHsau8YXMvnA4+p0XePTP1euhq9Dfp/mDy9V/X7Y6evRblnLHf5\nf0U1qz1Qkp7OTQa+Rgh4FAe2EC9NpyB4ihwTrVvCdz0s6KX+mt90JtSUrc2Vzr2A\n0OsngqRW7TWyhG3UvYxNWMU=\n-----END PRIVATE KEY-----\n",
-    "client_email": "edit-tf-schedule@handai-tf-system-control.iam.gserviceaccount.com",
-    "client_id": "115271653994163090816",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/edit-tf-schedule%40handai-tf-system-control.iam.gserviceaccount.com",
-    "universe_domain": "googleapis.com"
-    }
-
+        
     
 
 
@@ -160,6 +147,7 @@ def main():
     print(df_todo.head(10))  # 最初の10行を表示
 
     urls = load_com_urls()
+    print(urls)
     member_to_find=['国吉　遼河','百濃　隼大','中嶋　遼']
     # urls=[
     #     "https://gold.jaic.org/icaak/record/2024/14_SHUMOKU/kyougi.html",
@@ -184,6 +172,12 @@ def main():
         #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/231104/kyougi.html"
         #"https://gold.jaic.org/osaka/2023/osk_champ/tt.html",
         #"https://www.oaaa.jp/kotairen/12chiku/startlist/2023/230827/tt.html"
+        # "http://breaking.sagarikujyo.jp/R06/R06_kokspo/rel064.html",
+        # "http://seibanrikujou.g1.xrea.com/r6/tikubetu/html/tt.html",
+        # "http://seibanrikujou.g1.xrea.com/r6/seibanIH/html/kyougi.html",
+        # "http://www.haaa.jp/2022/hyo/web/tt.html",
+        "https://www.oaaa.jp/kotairen/12chiku/startlist/2023/230827/kyougi.html",
+        "https://www.oaaa.jp/results/r_24/1kai_ban/rel046.html"
 
     ]
     member_high=[
@@ -194,25 +188,27 @@ def main():
         # "栁瀨　宏志郎"
         #"藤村　修冬",
         #"小川　真帆",
-        #"小山　大地",
-        "後藤　耀"
+        # "中島　壮一朗",
+        # "山田　翔悟",
+        "堀田　悠介"
+        #"後藤　耀"
     ]
     # # for url in urls:
-    # for url in urls[:5]:
-    #         #print(f"競技URL: {url}")
-    #         # time.sleep(2)  # API制限対策のため1秒待機
-    #         # 競技結果を取得
-    #         #print(f"競技結果を取得中: {url}")
-    #         #finsih_comp=run_real_time_v2(url=url, univ='大阪大', spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE, spread_sheet_ID_member=SPREADSHEET_ID_MEMBER, creds_dict=creds_dict)
-    #         #print(f"競技結果取得完了: {url}")
-    #     finsih_comp=run_real_time_v2(
-    #         url=url,
-    #         univ='大阪大',
-    #         spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
-    #         spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
-    #         creds_dict=creds_dict,
-    #         announce_discord=False
-    #    )
+    for url in urls[:0]:
+            #print(f"競技URL: {url}")
+            # time.sleep(2)  # API制限対策のため1秒待機
+            # 競技結果を取得
+            #print(f"競技結果を取得中: {url}")
+            #finsih_comp=run_real_time_v2(url=url, univ='大阪大', spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE, spread_sheet_ID_member=SPREADSHEET_ID_MEMBER, creds_dict=creds_dict)
+            #print(f"競技結果取得完了: {url}")
+        finsih_comp=run_real_time_v2(
+            url=url,
+            univ='大阪大',
+            spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
+            spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
+            creds_dict=creds_dict,
+            announce_discord=False
+       )
     for url in urls_high:
         finsih_comp=run_real_time_players(
             url=url,
@@ -224,7 +220,7 @@ def main():
 
     member_list= load_member_list()
     print(member_list)
-    for member in member_list[:10]:
+    for member in member_list[:5]:
         #p#rint(f"メンバー: {member['name']}, ID: {member['id']}, Discord: {member['discord']}")
         time.sleep(2)  # API制限対策のため1秒待機
         print(f"メンバー: {member}")
