@@ -7,7 +7,8 @@ import argparse
 import numpy as np
 import os
 from bs4 import BeautifulSoup
-
+import random
+import time
 
 """
 • fetcher  
@@ -17,6 +18,16 @@ from bs4 import BeautifulSoup
 
 ポイントは「fetcher は“どこから”取ってくるか」「parser は“どう読み解く”か」に専念させることです。これによりテストや保守がしやすくなります。
 """
+
+
+# ユーザーエージェントのリストを定義
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0'
+]
+
 def check_url_exists(url):
     try:
         response = requests.head(url, allow_redirects=True, timeout=5)
@@ -119,56 +130,118 @@ def get_base_url(url):
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path.rsplit('/', 1)[0]}/"
     return base_url
 
-def fetch_html(url: str, timeout: float = 10.0) -> str | None:
+def fetch_html(url, retries=10):
     """
-    URL から HTML を取得し、以下の特徴を持ちます:
-    - Forbidden(403) が返ってきたら User-Agent を変えて再試行
-    - 適切に文字コードを扱い文字化けを防止
-    - エラー時は空文字を返す
+    ウェブページのHTMLを取得する関数（改良版）
+    
+    Args:
+        url: 取得するURL
+        retries: リトライ回数
+    
+    Returns:
+        HTMLコンテンツ（文字列）またはNone（取得失敗時）
     """
-    # 初回リクエスト用ヘッダー
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
-        "Referer": url.rsplit('/', 1)[0] + '/'
-    }
-
-    try:
-        resp = requests.get(url, headers=headers, timeout=timeout)
-        resp.raise_for_status()
-    except requests.HTTPError as e:
-        # 403 Forbidden の場合だけ再試行
-        if resp.status_code == 403:
-            print(f"[WARN] 403 Forbidden, retrying {url} with alternate UA")
-            headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
-            try:
-                resp = requests.get(url, headers=headers, timeout=timeout)
-                resp.raise_for_status()
-            except Exception:
-                print(f"[ERROR] Still forbidden: {url}")
-                return ""
-        else:
-            print(f"[WARN] HTTP error for {url}: {e}")
-            return ""
-    except requests.RequestException as e:
-        print(f"[WARN] fetch_html failed for {url}: {e}")
-        return ""
-
-    # 文字化け防止: BeautifulSoup にバイト列を渡して<meta>等からエンコーディング自動判別
-    try:
-        # 明示的なエンコーディング指定なしでBeautifulSoupにバイト列を渡す
-        soup = BeautifulSoup(resp.content, "html.parser", from_encoding=None)
-        return soup.prettify()
-    except Exception as e:
-        print(f"[WARN] BeautifulSoup parsing failed: {e}")
-        
-        # フォールバック: requests の推定エンコーディングを使用
+    for attempt in range(retries):
         try:
-            resp.encoding = resp.apparent_encoding
-            return resp.text
+            # ランダムなユーザーエージェントを選択
+            headers = {
+                'User-Agent': random.choice(USER_AGENTS),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'ja,en-US;q=0.7,en;q=0.3',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Cache-Control': 'max-age=0',
+                'Pragma': 'no-cache'
+            }
+            
+            print(f"[INFO] Requesting {url} (Attempt {attempt+1}/{retries})")
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            if response.status_code == 200:
+                # 文字化け防止: BeautifulSoup にバイト列を渡して<meta>等からエンコーディング自動判別
+                try:
+                    # 明示的なエンコーディング指定なしでBeautifulSoupにバイト列を渡す
+                    soup = BeautifulSoup(response.content, "html.parser", from_encoding=None)
+                    return soup.prettify()
+                except Exception as e:
+                    print(f"[WARN] BeautifulSoup parsing failed: {e}")
+                    
+                    # フォールバック: requests の推定エンコーディングを使用
+                    try:
+                        response.encoding = response.apparent_encoding
+                        return response.text
+                    except Exception as e:
+                        print(f"[WARN] Fallback decoding failed for {url}: {e}")
+                        return ""
+            elif response.status_code == 403:
+                print(f"[WARN] 403 Forbidden, retrying {url} with alternate UA")
+                # 次のリトライまでの待機時間を徐々に増やす
+                time.sleep(2 + attempt * 2)
+            else:
+                print(f"[ERROR] HTTP status code {response.status_code} for {url}")
+                time.sleep(1)
         except Exception as e:
-            print(f"[WARN] Fallback decoding failed for {url}: {e}")
-            return ""
+            print(f"[ERROR] Exception when fetching {url}: {e}")
+            time.sleep(1)
+    
+    print(f"[ERROR] Failed to fetch {url} after {retries} attempts")
+    return ""
+
+
+# def fetch_html(url: str, timeout: float = 10.0) -> str | None:
+#     """
+#     URL から HTML を取得し、以下の特徴を持ちます:
+#     - Forbidden(403) が返ってきたら User-Agent を変えて再試行
+#     - 適切に文字コードを扱い文字化けを防止
+#     - エラー時は空文字を返す
+#     """
+#     # 初回リクエスト用ヘッダー
+#     # headers = {
+#     #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+#     #     "Accept-Language": "ja,en-US;q=0.7,en;q=0.3",
+#     #     "Referer": url.rsplit('/', 1)[0] + '/'
+#     # }
+#     headers = random.choice(USER_AGENTS)
+#     try:
+#         resp = requests.get(url, headers=headers, timeout=timeout)
+#         resp.raise_for_status()
+#     except requests.HTTPError as e:
+#         # 403 Forbidden の場合だけ再試行
+#         if resp.status_code == 403:
+#             print(f"[WARN] 403 Forbidden, retrying {url} with alternate UA")
+#             headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+#             try:
+#                 resp = requests.get(url, headers=headers, timeout=timeout)
+#                 resp.raise_for_status()
+#             except Exception:
+#                 print(f"[ERROR] Still forbidden: {url}")
+#                 return ""
+#         else:
+#             print(f"[WARN] HTTP error for {url}: {e}")
+#             return ""
+#     except requests.RequestException as e:
+#         print(f"[WARN] fetch_html failed for {url}: {e}")
+#         return ""
+
+#     # 文字化け防止: BeautifulSoup にバイト列を渡して<meta>等からエンコーディング自動判別
+#     try:
+#         # 明示的なエンコーディング指定なしでBeautifulSoupにバイト列を渡す
+#         soup = BeautifulSoup(resp.content, "html.parser", from_encoding=None)
+#         return soup.prettify()
+#     except Exception as e:
+#         print(f"[WARN] BeautifulSoup parsing failed: {e}")
+        
+#         # フォールバック: requests の推定エンコーディングを使用
+#         try:
+#             resp.encoding = resp.apparent_encoding
+#             return resp.text
+#         except Exception as e:
+#             print(f"[WARN] Fallback decoding failed for {url}: {e}")
+#             return ""
 
 def fetch_url_univ(url,univ):
     # get_base_url関数を使用して、指定されたURLからベースURLを取得

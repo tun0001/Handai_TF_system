@@ -95,6 +95,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
     #df_status['type']=df_now_result['type']
     #print(df_status[df_status['状況'] != "結果"])
     df_peding= df_status[df_status["status"] == "未完了"]
+    #print(df_status)
     if df_peding.empty:
         time.sleep(1)  # API制限対策のため1秒待機
         if check_sheet_exists(
@@ -124,7 +125,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
     for index, row in df_peding.iterrows():
         #まず，種目の完了を判断
         #print(row)
-        print(row["種目"])
+        #print(row["種目"])
         if row['状況']== "結果":
         # finish,urls=parse_all_event_finish(html=html, 
         #                    event_name=row["種目"], 
@@ -189,7 +190,8 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                         
                     add_member_list(name)
                     add_event_list(row['種目'])
-                    print(name)
+                    print(f"選手名: {name}, 種目: {row['種目']}")
+                    #print(name)
                     time.sleep(1)  # API制限対策のため1秒待機
                     write_to_new_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
@@ -204,6 +206,56 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                     #     sheet_name=name,
                     #     cred_dict=creds_dict
                     # )
+                    if announce_discord:    
+                        if not df_result.empty:
+                            # content: 各列名:値 形式で整形
+                            #------
+                            process_sheet( 
+                                spreadsheet_id=spread_sheet_ID_member,
+                                sheet_name=name,
+                                creds_dict=creds_dict
+                            )
+                            df_all=load_sheet(
+                                spreadsheet_id=spread_sheet_ID_member,
+                                sheet_name=name,
+                                creds_dict=creds_dict
+                            )
+                            df_result_send = df_all[df_all['大会'] == conference_name]
+                            if not df_result_send.empty:
+                                df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
+                            else:
+                                df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
+                            print(df_result_send)
+                            # Remove columns that contain only NaN values or empty strings
+                            df_result_send = df_result_send.dropna(axis=1, how='all')
+                            df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
+                            print(df_result_send)
+
+                            #------
+                            lines = []
+                            for _, row in df_result_send.iterrows():
+                                for col in df_result_send.columns:
+                                    lines.append(f"{col}: {row[col]}")
+                                lines.append("")  # 行間を空ける
+                            # コードブロックで囲んで Discord に送信
+                            content = "```text\n" + "\n".join(lines) + "```"
+                            # thread_name: 大会名をスレッド名に
+                            thread_name = conference_name
+                            # channel_id, token は環境変数から取得
+                            #hannel_id = int(os.environ["DISCORD_CHANNEL_ID"])
+                            channel_id = int(1380200984256450751)
+                            token = os.environ["DISCORD_BOT_TOKEN"]
+                            print(f"▶️ Discord に投稿: channel={channel_id}, thread={thread_name}")
+                            # 非同期関数を実行
+                            asyncio.run(send_to_thread(
+                                token=token,
+                                channel_id=channel_id,
+                                thread_name=thread_name,
+                                content=content
+                            ))
+                        else:
+
+                            print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
 
                     #-------
                     # write_to_new_sheet(
@@ -218,34 +270,9 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
 
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────
-            if announce_discord:    
-                if not df_result.empty:
-                    # content: 各列名:値 形式で整形
-                    lines = []
-                    for _, row in df_result.iterrows():
-                        for col in df_result.columns:
-                            lines.append(f"{col}: {row[col]}")
-                        lines.append("")  # 行間を空ける
-                    # コードブロックで囲んで Discord に送信
-                    content = "```text\n" + "\n".join(lines) + "```"
-                    # thread_name: 大会名をスレッド名に
-                    thread_name = conference_name
-                    # channel_id, token は環境変数から取得
-                    channel_id = int(os.environ["DISCORD_CHANNEL_ID"])
-                    token = os.environ["DISCORD_BOT_TOKEN"]
-                    print(f"▶️ Discord に投稿: channel={channel_id}, thread={thread_name}")
-                    # 非同期関数を実行
-                    asyncio.run(send_to_thread(
-                        token=token,
-                        channel_id=channel_id,
-                        thread_name=thread_name,
-                        content=content
-                    ))
-                else:
-
-                    print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
+            
     #---------------------------------------------------
-    print(df_results)
+    #print(df_results)
     df_status.to_json(str(status_path), orient="records", lines=True)
     df_results.to_json(str(results_path), orient="records", lines=True)
 

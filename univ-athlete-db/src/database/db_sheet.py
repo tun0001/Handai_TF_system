@@ -580,6 +580,7 @@ def overwrite_sheet(
     ws.update("A1", payload)
 
 
+
 #--------------
 def sort_dataframe_by_date(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -717,7 +718,7 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
             "110mH","100mH", "300mH", "400mH", "3000mSC"
             ]
             event_relay_list = [
-            "4x100mR", "4x400mR", "4x200mR", "4x800mR"
+                "4x100mR", "4x400mR", "4x200mR", "4x800mR"
             ]
             event_field_list = [
             "走高跳", "走幅跳", "三段跳", "棒高跳",
@@ -1140,8 +1141,9 @@ def process_sheet(
     df_12=remove_duplicates_from_df(df_11)  # 重複行を削除
     df_13 = add_pb_column(df_12)  # PB列を追加
     df_14 = add_sb_column(df_13)  # SB列を追加
+    df_15 = add_ub_column(df_14)  # UB列を追加
     
-    df_sorted = df_13
+    df_sorted = df_15
     # ソート用のカラムを削除
     #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
 
@@ -1162,6 +1164,7 @@ def add_pb_column(df: pd.DataFrame) -> pd.DataFrame:
     df_pb = df
     event_list = df['event'].unique()
     df['PB'] = ""
+    df_other = df[df['大学名']=='その他']
     for event in event_list:
         df_event = df_pb[df_pb['event'] == event]
         if not df_event.empty:
@@ -1169,9 +1172,6 @@ def add_pb_column(df: pd.DataFrame) -> pd.DataFrame:
             if '記録(比較)' not in df_event.columns:
                 print("'記録(比較)' column not found in the DataFrame.")
                 continue
-            # 最小の記録(比較)を取得
-            #print(event)
-            #print(df_event['type'])
             # 'type'列の値に"Jump", "Throw", "Score"が含まれている行が1つでもあれば最大値を使用
             if df_event['type'].astype(str).str.contains('Jump|Throw|Score').any():
                 # 跳躍・投擲・複合競技の場合は最大値を使用
@@ -1190,6 +1190,87 @@ def add_pb_column(df: pd.DataFrame) -> pd.DataFrame:
                 if 'PB' not in df.columns:
                     df['PB'] = ""
                 df.at[pb_idx, 'PB'] = "PB"
+        # 'univ'が"その他"の行もPBを設定
+        df_event_other = df_other[df_other['event'] == event]
+        if not df_event_other.empty:
+            if '記録(比較)' not in df_event_other.columns:
+                print("'記録(比較)' column not found in the DataFrame.")
+                continue
+            # 'type'列の値に"Jump", "Throw", "Score"が含まれている行が1つでもあれば最大値を使用
+            if df_event_other['type'].astype(str).str.contains('Jump|Throw|Score').any():
+                # 跳躍・投擲・複合競技の場合は最大値を使用
+                #print("Using max for PB calculation")
+                if df_event_other['記録(比較)'].notna().any():
+                    pb_idx = df_event_other['記録(比較)'].idxmax()
+                else:
+                    pb_idx = None
+            else:
+                if df_event_other['記録(比較)'].notna().any():
+                    pb_idx = df_event_other['記録(比較)'].idxmin()
+                else:
+                    pb_idx = None
+
+            if pb_idx is not None and not pd.isnull(pb_idx):
+                if 'PB' not in df.columns:
+                    df['PB'] = ""
+                df.at[pb_idx, 'PB'] = "PB_high"
+    return df
+
+def add_ub_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    DataFrameからUB（University Best）を抽出して新しい列を追加する
+    """
+    df_ub = df
+    event_list = df['event'].unique()
+    df['UB'] = ""
+    for event in event_list:
+        df_event = df_ub[df_ub['event'] == event]
+        # Filter records where PB contains a value (not empty)
+        df_event_with_pb = df_event[df_event['PB'].notna() & (df_event['PB'] != "")]
+        # Check if there are one or fewer records with PB values
+        df_event = df_event[df_event['大学名']!= 'その他']
+        if len(df_event_with_pb) == 1 and df_event_with_pb['PB'].iloc[0] == "PB_high":
+            if not df_event.empty:
+            # '記録(比較)' 列が存在するか確認
+                if '記録(比較)' not in df_event.columns:
+                    print("'記録(比較)' column not found in the DataFrame.")
+                    continue
+                # 最小の記録(比較)を取得
+                if df_event['type'].astype(str).str.contains('Jump|Throw|Score').any():
+                    # 跳躍・投擲・複合競技の場合は最大値を使用
+                    if df_event['記録(比較)'].notna().any():
+                        ub_idx = df_event['記録(比較)'].idxmax()
+                    else: 
+                        ub_idx = None
+                else:
+                    if df_event['記録(比較)'].notna().any():
+                        ub_idx = df_event['記録(比較)'].idxmin()
+                    else:
+                        ub_idx = None
+
+                if ub_idx is not None and not pd.isnull(ub_idx):
+                    if 'UB' not in df.columns:
+                        df['UB'] = ""
+                    # 安全な値の比較
+                    try:
+                        pb_value = float(df_event_with_pb['記録(比較)'].iloc[0])
+                        ub_value = float(df.at[ub_idx, '記録(比較)'])
+                        print(f"PB Value: {pb_value}, UB Value: {ub_value}")
+                        
+                        # 競技タイプによって比較条件を変える
+                        if df.at[ub_idx, 'type'].lower().strip() in ['jump', 'throw', 'score']:
+                            # 跳躍・投擲・得点競技は大きい値が良い記録
+                            is_better = pb_value > ub_value
+                        else:
+                            # トラック競技は小さい値が良い記録
+                            is_better = pb_value < ub_value
+                            
+                        if is_better:
+                            print(f"Setting UB for index {ub_idx} with value {ub_value}")
+                            df.at[ub_idx, 'UB'] = "UB"
+                    except (ValueError, TypeError):
+                        # 数値に変換できない場合は処理をスキップ
+                        pass
     return df
 
 def add_sb_column(df: pd.DataFrame) -> pd.DataFrame:
@@ -1230,7 +1311,6 @@ def add_sb_column(df: pd.DataFrame) -> pd.DataFrame:
             else:
                 df.loc[df['event'] == event, 'SB'] = None
     return df
-
 
 def sort_column(
     spreadsheet_id: str,
@@ -1369,7 +1449,7 @@ def choose_best_sheet(
 def load_sheet(
     spreadsheet_id: str,
     sheet_name: str,
-    cred_dict: dict | None = None,
+    creds_dict: dict | None = None,
 ):
     """
     指定されたスプレッドシートの指定シートを読み込む
@@ -1380,7 +1460,7 @@ def load_sheet(
         "https://www.googleapis.com/auth/drive",
     ]
     
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     
     sh = client.open_by_key(spreadsheet_id)
@@ -1420,4 +1500,3 @@ if __name__ == "__main__":
     df = get_compare_record(df)
     
     print(df)
-    
