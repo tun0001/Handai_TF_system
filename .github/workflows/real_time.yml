@@ -37,6 +37,7 @@ jobs:
       URL1: https://gold.jaic.org/icaak/record/2025/4_KSIC/kyougi.html
       URL2: https://www.oaaa.jp/results/r_25/kanjitsu/kyougi.html
       UNIV: 大阪大
+      GOOGLE_ACCOUNT_KEY:  ${{ secrets.GOOGLE_ACCOUNT_KEY }}
       DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
       DISCORD_BOT_TOKEN:   ${{ secrets.DISCORD_BOT_TOKEN }}
     steps:
@@ -55,11 +56,11 @@ jobs:
           URL1:               ${{ env.URL1 }}
           URL2:               ${{ env.URL2 }}
           UNIV:              ${{ env.UNIV }}
+          GOOGLE_ACCOUNT_KEY:  ${{ env.GOOGLE_ACCOUNT_KEY }}
           DISCORD_CHANNEL_ID: ${{ env.DISCORD_CHANNEL_ID }}
           DISCORD_BOT_TOKEN:  ${{ env.DISCORD_BOT_TOKEN }}
         run: |
-          python src/cli_real_time.py "${URL1}" "${UNIV}"
-          python src/cli_real_time.py "${URL2}" "${UNIV}"
+          python src/cli_spread.py"
       - name: Git status
         run: |
           git config user.name "tun001"
