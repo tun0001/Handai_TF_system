@@ -19,9 +19,8 @@ def main():
         return
         
     try:
-        # 環境変数から取得した場合は文字列 → dict に変換
-        creds_str = creds_env.replace('\\n', '\n')
-        creds_dict = json.loads(creds_str)
+        # creds_envがすでに正しいJSON文字列の場合、そのままロード
+        creds_dict = json.loads(creds_env)
     except json.JSONDecodeError as e:
         print(f"❌ 認証情報のJSONデコードに失敗しました: {e}")
         return
