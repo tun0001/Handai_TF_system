@@ -12,7 +12,7 @@ import time
 
 
 def main():
-    creds_env = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+    creds_env = os.getenv('GOOGLE_ACCOUNT_KEY')
     
     if not creds_env:
         print("❌ 環境変数 GOOGLE_SHEETS_CREDENTIALS が設定されていません。")
