@@ -60,10 +60,9 @@ jobs:
           DISCORD_CHANNEL_ID: ${{ env.DISCORD_CHANNEL_ID }}
           DISCORD_BOT_TOKEN:  ${{ env.DISCORD_BOT_TOKEN }}
         run: |
-          cd /workspaces/Handai_TF_system/Docker
+          cd ../Docker
           sh build.sh
           sh run.sh
-      - name: Git status
         run: |
           git config user.name "tun001"
           git config user.email "tune05155@gmail.com"
