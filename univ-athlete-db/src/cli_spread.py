@@ -264,8 +264,7 @@ def main():
                 # ステータスを更新
                 worksheet_conference.update_cell(index+2, idx_result+1, "DOING")
                 #print(f"大会名: {row['大会名']} の競技結果はまだ取得できませんでした。")
-
-
+        return
 
 if __name__ == "__main__":
     main()
