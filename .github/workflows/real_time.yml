@@ -62,7 +62,7 @@ jobs:
         run: |
           cd ../Docker
           sh build.sh
-          sh run.sh
+          sh run_2.sh
         run: |
           git config user.name "tun001"
           git config user.email "tune05155@gmail.com"
