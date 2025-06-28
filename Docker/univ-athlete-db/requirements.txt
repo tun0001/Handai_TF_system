@@ -1,8 +1,0 @@
-requests
-beautifulsoup4
-sqlalchemy
-pandas
-pytest
-discord.py
-gspread
-oauth2client

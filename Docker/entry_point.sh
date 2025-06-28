@@ -21,6 +21,7 @@ ls -la /univ-athlete-db/src
 
 # cli_spread.pyを実行
 echo "Starting cli_spread.py..."
+#python /univ-athlete-db/src/discord_poster.py "$@"
 python /univ-athlete-db/src/cli_spread.py "$@"
 
 # 対話的シェルが必要な場合は、以下を使用

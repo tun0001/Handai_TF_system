@@ -18,6 +18,16 @@ echo "Starting Docker container: ${CONTAINER_NAME}..."
 echo "Mounting source directory: ${SRC_DIR} -> ${CONTAINER_SRC_DIR}"
 echo "Mounting database directory: ${DB_DIR} -> ${CONTAINER_DB_DIR}"
 
+ENV_FILE="$HOME/.config/handai-tf-system/env.sh"
+if [ -f "$ENV_FILE" ]; then
+    echo "環境変数ファイルを読み込み中: ${ENV_FILE}"
+    source "$ENV_FILE"
+else
+    echo "環境変数ファイルが見つかりません: ${ENV_FILE}"
+    echo "ファイルを作成してください"
+    exit 1
+fi
+
 # データベースディレクトリが存在しない場合は作成
 if [ ! -d "$DB_DIR" ]; then
     echo "Creating database directory: ${DB_DIR}"
@@ -26,7 +36,10 @@ fi
 
 # Dockerコンテナを実行
 docker run --rm -it \
+    --dns=8.8.8.8 \
     --name ${CONTAINER_NAME} \
     -v ${SRC_DIR}:${CONTAINER_SRC_DIR} \
     -v ${DB_DIR}:${CONTAINER_DB_DIR} \
+    -e DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN}" \
+    -e GOOGLE_SHEETS_CREDENTIALS="${GOOGLE_SHEETS_CREDENTIALS}" \
     ${IMAGE_NAME}:${TAG} "$@"

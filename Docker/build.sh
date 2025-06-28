@@ -17,7 +17,7 @@ cp -r ../univ-athlete-db .
 docker build -t ${IMAGE_NAME}:${TAG} .
 
 # コピーしたファイルを削除（オプション）
-rm -rf requirements.txt src database
+rm -rf univ-athlete-db
 
 if [ $? -eq 0 ]; then
     echo "Successfully built Docker image: ${IMAGE_NAME}:${TAG}"
