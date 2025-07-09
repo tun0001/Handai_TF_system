@@ -13,20 +13,6 @@ import time
 
 def main():
     #creds_env = os.getenv('GOOGLE_ACCOUNT_KEY')
-    creds_dict={
-    "type": "service_account",
-    "project_id": "handai-tf-system-control",
-    "private_key_id": "ab0ab0cb57e3284ae505af098928106f6c332bd7",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDNC+Wc3rmcf30u\n5p5MvM2jUT4VigO0XoiTMqJatBLN4kHSZjSX6K4Tpk708s9rsAgiWKHJ0KoZqx4X\nO2IfJM6PllhrZTuqlG3Ny9nEd9eVv6yTNsP66a1b2xKeRTSLMAyGY6EQIBRdfjIY\nA83lNLZeE6V7s5VeKn0AS0EcCoQJMb64AomqM630L4GBiHK1NF7Dag0g11H3fvSR\nawQMzaD6N8pyS80GRpx7YwoIBsmV4obRdZHXDiUz6Vgrwrm/5NECgt7QVal0kCp8\nriOOacSV8PviYJw3fmYCdeq6fMDMkunZVqU61aCPWTPW49TJFHkCOCRFhFgK53gY\nOx2cpqY7AgMBAAECggEAFMvrGvEAFF5d3P7o+VGA7dqUmGyqGYYpBfzxuI9hBN64\n3FUfanTgCwAoK/HglcSB3rHsnuJ6DiZr4+FS/2OlS6ztBN98oL1zMZdGXAXnqLmL\nEFdSo0VGHvXmOoU8Yg2ah5rdQBxw1FazT/o6zM9+26XUd+pr8OQQT5JSZTyvzZq+\ncU5jcLDPKTWx3D2NY2vyE4sxh990tJGFu7n8NWoT+zqlRtn+JIToymG3POGasZAy\nbdkWT3uWh/ACNAs0XmWPFHoY/ip5GAva8fxyYs5cshH7f6FMHRx+R9DlfEvr9h7x\nCc3vfb0P6Mk+Z+FneA6EwQh+V//w6SSq54ZO40J3mQKBgQD0iWgYNtYAtyPjtjc5\nQLWj6TpSIYoVZhAp9AAxpBW6knMmHqwCL9BlPzJt3a6f2JV/YTctEK5YshowqeCX\nciK30RTiVAD8GmUfGQlEV0FgIAeRC+a6LglO271U8icBey+mpIuP/ubmZ4tBzOyh\nqzI9RvaDNk0x99nHqxZyW6psvQKBgQDWqJUZe4VtsLUS1u64jQ3J7ke4uPAWoZmH\nqy1vB05vO33pUuuqFNoR08KNgdp4kgQLyewLoefd7vl5sYJL1jb4CA8lzPXYvLAb\n/qVvcG/ucC+HWlDqEg+hZzl6geqXr46pRu8oqFO5MtA/t1KeFv2CHPSz81vuxABS\ntx6lG7qaVwKBgQCLbESTecBuS/0EegHmfMSTngiIh2LpbHXO1bW+l+VjqNhKZbaA\n0K4q6+texMQpkx05sT36TcZ5/6H7GQBamNK+p1EW8fpVwt7g6i9kbbNykRB/XJ/C\nizj3Y0YBxscCiy/R/YMtKJKRz3uQmrxYOPm+AlXO3gkJcl0TALMdpLH4qQKBgCMP\nRcrzscdIpUp+cF8UKrxgfrZc/lmz6y+Ndc48k0L3pIkHUhZlcXiX7Z7PJq+qqZ6D\nTFpaB1ToQzbtFyrrwe6g4lh6MW1E5D6uSLb61k1LZXfl+HFCoerqwSiRL4+2zMY5\nH7a0R3hoJDtD5eqMNruZnx4FEW7d9G+OGSM+dCvhAoGBAO49AOIUu3sZCIjPNbvw\n3P4afVy7WT/BkhQOECgMkucKKeg3rMPn/7cAOIIFqFh+z+5yNsDn4YiYztCTten7\nvceWxYThIR85fqpEPWtXVNC6HEm/TmdqK0geoaf4MdSy0GWhtkjB+TxWmEBy1zES\nQ+CtH2ADdK5WibsH/j3QgZxw\n-----END PRIVATE KEY-----\n",
-    "client_email": "edit-tf-schedule@handai-tf-system-control.iam.gserviceaccount.com",
-    "client_id": "115271653994163090816",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/edit-tf-schedule%40handai-tf-system-control.iam.gserviceaccount.com",
-    "universe_domain": "googleapis.com"
-    }
-
 
     # if not creds_env:
     #     print("❌ 環境変数 GOOGLE_SHEETS_CREDENTIALS が設定されていません。")
