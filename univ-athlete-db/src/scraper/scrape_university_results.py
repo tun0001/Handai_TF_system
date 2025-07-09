@@ -14,6 +14,7 @@ import json
 import re
 import time
 import requests
+import pandas as pd
 from typing import List, Dict, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -90,16 +91,43 @@ class UniversityResultsScraper(JavaScriptScraper):
             # 大学名の正規化パターン
             normalized_names = self._normalize_university_name(university_name)
             
-            # 所属リストから大学名を検索
+            # 所属リストから大学名を検索（精密マッチング）
+            exact_matches = []
+            partial_matches = []
+            
             for syozoku in syozoku_list:
                 syozoku_name = syozoku.get('SYOZOKUMEI', '')
                 syozoku_id = syozoku.get('SYOZOKUNO', '')
                 
-                # 複数の正規化パターンで照合
+                # 完全一致を最優先
                 for normalized_name in normalized_names:
-                    if normalized_name in syozoku_name:
-                        print(f"🎯 大学発見: {syozoku_name} (ID: {syozoku_id})")
-                        return syozoku_id
+                    if syozoku_name == normalized_name:
+                        exact_matches.append((syozoku_name, syozoku_id))
+                        break
+                else:
+                    # 部分一致（大学系のみ対象）
+                    for normalized_name in normalized_names:
+                        if (normalized_name in syozoku_name and 
+                            ('大学' in syozoku_name or '大' in syozoku_name) and
+                            not any(word in syozoku_name for word in ['高校', '中学', '小学', '企業', '実業', 'ガス', '電力', '銀行', '会社'])):
+                            partial_matches.append((syozoku_name, syozoku_id))
+                            break
+            
+            # 完全一致があれば最優先
+            if exact_matches:
+                syozoku_name, syozoku_id = exact_matches[0]
+                print(f"🎯 大学発見（完全一致）: {syozoku_name} (ID: {syozoku_id})")
+                return syozoku_id
+            
+            # 部分一致があれば次の候補
+            if partial_matches:
+                syozoku_name, syozoku_id = partial_matches[0]
+                print(f"🎯 大学発見（部分一致）: {syozoku_name} (ID: {syozoku_id})")
+                if len(partial_matches) > 1:
+                    print("⚠️ 複数の候補が見つかりました:")
+                    for name, id_ in partial_matches[:3]:
+                        print(f"   - {name} (ID: {id_})")
+                return syozoku_id
             
             # 見つからない場合、利用可能な所属を表示
             print(f"❌ 大学「{university_name}」が見つかりません")
@@ -132,11 +160,6 @@ class UniversityResultsScraper(JavaScriptScraper):
         # 「大学」→「大」の変換
         if university_name.endswith('大学'):
             patterns.append(university_name[:-1])
-        
-        # 部分一致用の短縮形
-        if len(university_name) > 2:
-            patterns.append(university_name[:3])  # 最初の3文字
-            patterns.append(university_name[:2])  # 最初の2文字
         
         # 重複を除去
         return list(set(patterns))
@@ -503,6 +526,44 @@ class UniversityResultsScraper(JavaScriptScraper):
         for record_type, count in record_types.items():
             if record_type in ['DNS', 'DNF', 'DQ']:
                 print(f"   {record_type}: {count}名")
+    
+    def results_to_dataframe(self, results: List[Dict]) -> pd.DataFrame:
+        """結果データをpandas DataFrameに変換"""
+        if not results:
+            return pd.DataFrame()
+        
+        # DataFrameに適した形式に変換
+        df_data = []
+        for result in results:
+            df_row = {
+                '選手ID': result.get('player_id', ''),
+                '選手名（かな）': result.get('kana_name', ''),
+                '選手名（漢字）': result.get('kanji_name', ''),
+                '年度': result.get('year', ''),
+                '生年': result.get('birth_year', ''),
+                '性別': result.get('gender', ''),
+                '競技名': result.get('event_name', ''),
+                '競技種別': result.get('event_type', ''),
+                '記録': result.get('record', ''),
+                '順位': result.get('rank', ''),
+                '風速': result.get('wind', ''),
+                'コメント': result.get('comment', ''),
+                '日付': result.get('competition_date', ''),
+                'DNS': result.get('is_dns', False),
+                'DNF': result.get('is_dnf', False),
+                'DQ': result.get('is_dq', False)
+            }
+            df_data.append(df_row)
+        
+        df = pd.DataFrame(df_data)
+        
+        # データ型の調整
+        if '生年' in df.columns:
+            df['生年'] = pd.to_numeric(df['生年'], errors='coerce')
+        if '日付' in df.columns:
+            df['日付'] = pd.to_datetime(df['日付'], errors='coerce')
+            
+        return df
 
 def main():
     """メイン実行関数"""
@@ -533,7 +594,24 @@ def main():
         if results:
             print(f"\n✅ 取得成功: {len(results)}名の選手結果を取得")
             
-            # データを保存
+            # DataFrame出力オプション
+            try:
+                df = scraper.results_to_dataframe(results)
+                print(df[df['記録']==""])  # 記録がある選手のみ表示
+                csv_filename = f"university_results_{university_name}_{int(time.time())}.csv"
+                df.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+                print(f"📊 CSVファイルも保存: {csv_filename}")
+                
+                # 簡単な統計表示
+                print(f"\n📈 DataFrame概要:")
+                print(f"   行数: {len(df)}")
+                print(f"   列数: {len(df.columns)}")
+                if len(df) > 0:
+                    print(f"   競技種目数: {df['event_name'].nunique()}")
+            except Exception as e:
+                print(f"⚠️ DataFrame処理エラー: {e}")
+            
+            # JSONデータを保存
             scraper.save_results_data(results, university_name)
         else:
             print("❌ 結果データが取得できませんでした")

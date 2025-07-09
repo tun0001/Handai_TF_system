@@ -507,7 +507,7 @@ class SyozokuPlayerScraper(JavaScriptScraper):
 def main():
     """メイン実行関数"""
     # デフォルトのテストURL
-    test_url = "https://tsriku.stars.ne.jp/htmlR6/240727/shtml/SyozokuPlayer.html#!#syozoku_19"
+    test_url = "https://jaaf-shiga.com/results/2025/0712pch/shtml/TimeTable.html"
     
     # コマンドライン引数があれば使用
     if len(sys.argv) > 1:

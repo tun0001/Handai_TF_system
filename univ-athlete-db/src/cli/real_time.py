@@ -244,7 +244,8 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                             # channel_id, token は環境変数から取得
                             #hannel_id = int(os.environ["DISCORD_CHANNEL_ID"])
                             channel_id = int(1380200984256450751)
-                            token = os.environ["DISCORD_BOT_TOKEN"]
+                            #token = os.environ["DISCORD_BOT_TOKEN"]
+                            token="MTM4MDM5MTAyMDIzMDg3MzIyOQ.GFJQhX.UzXJbUqP0YWk3sheK4rVQqHYsgwnit___51ASo"
                             print(f"▶️ Discord に投稿: channel={channel_id}, thread={thread_name}")
                             # 非同期関数を実行
                             asyncio.run(send_to_thread(

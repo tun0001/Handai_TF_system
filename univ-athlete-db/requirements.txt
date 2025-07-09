@@ -6,3 +6,5 @@ pytest
 discord.py==2.5.2
 gspread
 oauth2client
+selenium
+webdriver-manager
