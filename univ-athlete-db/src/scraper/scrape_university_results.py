@@ -565,7 +565,7 @@ class UniversityResultsScraper(JavaScriptScraper):
             
         return df
 
-def scrape_univ_results_to_dataframe(timetable_url: str, university_name: str, headless: bool = True) -> Tuple[str, Optional[pd.DataFrame]]:
+def scrape_univ_results_to_dataframe(timetable_url: str, university_name: str, headless: bool = True) :
     """
     選手の結果を取得してDataFrameとして返す
     
@@ -604,8 +604,8 @@ def scrape_univ_results_to_dataframe(timetable_url: str, university_name: str, h
                 print(f"\n📈 DataFrame概要:")
                 print(f"   行数: {len(df)}")
                 print(f"   列数: {len(df.columns)}")
-                if len(df) > 0:
-                    print(f"   競技種目数: {df['event_name'].nunique()}")
+                
+                return df
             except Exception as e:
                 print(f"⚠️ DataFrame処理エラー: {e}")
             

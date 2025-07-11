@@ -82,8 +82,23 @@ def get_competition_name(timetable_url: str) -> Optional[str]:
 def _get_info_from_json(timetable_url: str) -> Optional[Dict]:
     """JSONデータから大会情報を取得"""
     try:
+        # URLが既にJSONファイルの場合とHTMLファイルの場合の両方に対応
+        if timetable_url.endswith('.json'):
+            # 既にJSONファイルのURL
+            if 'TimeTable.json' in timetable_url:
+                # TimeTable.jsonの場合、Taikai.jsonも試す
+                taikai_json_url = timetable_url.replace('TimeTable.json', 'Taikai.json')
+                json_url = timetable_url
+            else:
+                # その他のJSONファイル（例：Taikai.json）
+                taikai_json_url = timetable_url
+                json_url = timetable_url.replace('Taikai.json', 'TimeTable.json')
+        else:
+            # HTMLファイルのURL
+            taikai_json_url = timetable_url.replace('TimeTable.html', 'Taikai.json')
+            json_url = timetable_url.replace('.html', '.json')
+        
         # 方法1: Taikai.jsonから大会情報を取得（最優先）
-        taikai_json_url = timetable_url.replace('TimeTable.html', 'Taikai.json')
         print(f"🔍 Taikai.json URL: {taikai_json_url}")
         
         headers = {
@@ -137,7 +152,6 @@ def _get_info_from_json(timetable_url: str) -> Optional[Dict]:
             print(f"⚠️ Taikai.json取得失敗: {response.status_code}")
         
         # 方法2: TimeTable.jsonから大会情報を取得
-        json_url = timetable_url.replace('.html', '.json')
         print(f"🔍 JSON URL: {json_url}")
         
         headers = {

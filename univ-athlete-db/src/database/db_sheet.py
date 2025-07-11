@@ -34,7 +34,7 @@ def get_database_dir():
         current_dir = Path.cwd()
         # カレントディレクトリにsrcが含まれている場合は2階層上に移動
         if 'src' in str(current_dir):
-            return (current_dir.parent.parent / 'database').resolve()
+            return (current_dir.parent.parent / 'univ-athlete-db/database').resolve()
         else:
             # それ以外の場合は直接相対パスを使用
             return Path('univ-athlete-db/database').resolve()
@@ -53,8 +53,8 @@ def load_member_list() -> list[str]:
     ファイルが存在しない場合は空のリストを返す。
     """
     # プロジェクトルートからの相対パス
-    #file_path = Path('univ-athlete-db/database/member_list.txt')
-    file_path = get_database_dir() / 'member_list.txt'
+    file_path = Path('univ-athlete-db/database/member_list.txt')
+    #file_path = get_database_dir() / 'member_list.txt'
     try:
         with file_path.open(encoding='utf-8') as f:
             # 空行を除いて先頭・末尾の改行をstrip
@@ -66,7 +66,8 @@ def add_member_list(name):
     """
     メンバーリストにnameを一番上に追加する（重複があれば移動のみ）。
     """
-    #file_path = Path('univ-athlete-db/database/member_list.txt')
+    #file_path = Path('.../univ-athlete-db/database/member_list.txt')
+    
     file_path = get_database_dir() / 'member_list.txt'
     members = []
     if file_path.exists():
@@ -84,8 +85,8 @@ def load_conference_list() -> list[str]:
     大会リストを読み込み、リストとして返す。
     ファイルが存在しない場合は空のリストを返す。
     """
-    #file_path = Path('univ-athlete-db/database/conference_list.txt')
-    file_path = get_database_dir() / 'conference_list.txt'
+    file_path = Path('univ-athlete-db/database/conference_list.txt')
+    #file_path = get_database_dir() / 'conference_list.txt'
     try:
         with file_path.open(encoding='utf-8') as f:
             return [line.strip() for line in f if line.strip()]
@@ -96,8 +97,8 @@ def add_conference_list(conference_name):
     """
     大会リストに大会名を一番上に追加する（重複があれば移動のみ）。
     """
-    #file_path = Path('univ-athlete-db/database/conference_list.txt')
-    file_path = get_database_dir() / 'conference_list.txt'
+    file_path = Path('univ-athlete-db/database/conference_list.txt')
+    #file_path = get_database_dir() / 'conference_list.txt'
     conferences = []
     if file_path.exists():
         with file_path.open("r", encoding="utf-8") as f:
@@ -114,8 +115,8 @@ def load_event_list() -> list[str]:
     競技名リストを読み込み、リストとして返す。
     ファイルが存在しない場合は空のリストを返す。
     """
-    #file_path = Path('univ-athlete-db/database/event_list.txt')
-    file_path = get_database_dir() / 'event_list.txt'
+    file_path = Path('univ-athlete-db/database/event_list.txt')
+    #file_path = get_database_dir() / 'event_list.txt'
     try:
         with file_path.open(encoding='utf-8') as f:
             return [line.strip() for line in f if line.strip()]
@@ -704,12 +705,21 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
         # 正規表現で競技名を抽出（例: 100m, 走幅跳, 円盤投げ など）
         def extract_event_name(event_name_1,event_name_2, type):
             # 全角→半角変換（数字・英字）
-            event_name = event_name_2.translate(str.maketrans(
-            '０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ×',
-            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzx'
+            # 事前にint型からstr型に変換
+            #print()
+            if isinstance(event_name_2, int):
+                event_name_2 = str(event_name_2)
+            if isinstance(event_name_1, int):
+                event_name_1 = str(event_name_1)
+            # event_name_2優先、なければevent_name_1
+            event_name = event_name_2 if event_name_2 else event_name_1
+            # 全角→半角変換（数字・英字・記号）
+            event_name = event_name.translate(str.maketrans(
+                '０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ×',
+                '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzx'
             ))
             event_track_list = [
-            "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
+                "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
             ]
             event_wark_list=[
                 "5000mW", "10000mW", "20kW", "50kmW"
@@ -1061,6 +1071,72 @@ def get_compare_record(df: pd.DataFrame) -> pd.DataFrame:
     else:
         return df
 
+def change_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    DataFrameのカラム名を変更する
+    """
+    # カラム名の変更マッピング
+    column_mapping = {
+        '選手名（漢字）': '氏名',
+        '風速': '風',
+        '競技名': '種目',
+        '性別': '種別',
+        '競技種別': 'ラウンド',
+        '学年': '学年',
+        'コメント': 'ｺﾒﾝﾄ'
+    }
+    
+    # カラム名を変更
+    df = df.rename(columns=column_mapping)
+    # DNS, DNF, DQ カラムが存在する場合、Trueの要素があればコメントにカラム名を追加
+    #print(df.columns)
+    # for col in ['DNS', 'DNF', 'DQ']:
+    #     if col in df.columns:
+    #         # コメントカラムがなければ作成
+    #         if '' not in df.columns:
+    #             df['ｺﾒﾝﾄ'] = ""
+    #         # Trueの行にカラム名を追加
+    #         #print(df)
+    #         mask = df[col] == True
+    #         df.loc[mask, 'ｺﾒﾝﾄ'] = df.loc[mask, 'ｺﾒﾝﾄ'].astype(str) + (df.loc[mask, 'ｺﾒﾝﾄ'].apply(lambda x: " " if x else "")) + col
+    #         # カラムを削除
+    df = df.drop(columns=['DNS', 'DNF', 'DQ'], errors='ignore')
+    # "日付"列の "YYYY-MM-DD" を "YYYY年M月D日" に変換
+    
+
+
+    if '日付' in df.columns:
+        def convert_date_format(date_str):
+            # Handle pandas Timestamp objects
+            if isinstance(date_str, pd.Timestamp):
+                y = date_str.year
+                m = date_str.month
+                d = date_str.day
+                return f"{y}年{m}月{d}日"
+            # Only convert if format is YYYY-MM-DD or YYYY-M-D
+            if isinstance(date_str, str) and re.match(r'^\d{4}-\d{1,2}-\d{1,2}$', date_str):
+                try:
+                    y, m, d = date_str.split('-')
+                    return f"{int(y)}年{int(m)}月{int(d)}日"
+                except Exception:
+                    return date_str
+            return date_str
+        df['日付'] = df['日付'].apply(convert_date_format)
+    
+    # "年度"列が存在し、値が指定リストに含まれる場合は"学年"列を作成・更新
+    grade_values = ['1', '2', '3', '4', '5', '6', '7', '8', 'M1', 'M2', 'M3', 'D1', 'D2', 'D3', '農地']
+    if '年度' in df.columns:
+        # "学年"列がなければ作成
+        if '学年' not in df.columns:
+            df['学年'] = ""
+        # "年度"がgrade_valuesに含まれる場合のみ"学年"にセット
+        df['学年'] = df.apply(
+            lambda row: row['年度'] if str(row['年度']) in grade_values else row['学年'],
+            axis=1
+        )
+    df["競技"]=df["種目"]
+    return df
+
 def process_sheet(
     spreadsheet_id: str,
     sheet_name: str,
@@ -1163,7 +1239,7 @@ def add_pb_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     df_pb = df
     event_list = df['event'].unique()
-    df['PB'] = ""
+    df.loc[:,'PB'] = ""
     df_other = df[df['大学名']=='その他']
     for event in event_list:
         df_event = df_pb[df_pb['event'] == event]
@@ -1222,7 +1298,7 @@ def add_ub_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     df_ub = df
     event_list = df['event'].unique()
-    df['UB'] = ""
+    df.loc[:, 'UB'] = ""
     for event in event_list:
         df_event = df_ub[df_ub['event'] == event]
         # Filter records where PB contains a value (not empty)
@@ -1281,7 +1357,7 @@ def add_sb_column(df: pd.DataFrame) -> pd.DataFrame:
         print("'season' or 'event' column not found in the DataFrame.")
         return df
     season_list = df['season'].unique()
-    df['SB'] = ""
+    df.loc[:, 'SB'] = ""
     for season in season_list:
         df_season = df[df['season'] == season]
         event_list = df_season['event'].unique()

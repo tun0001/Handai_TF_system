@@ -713,7 +713,7 @@ class PlayerResultsScraper(JavaScriptScraper):
                 print(f"   DQ (失格): {dq_count}回")
 
 
-def scrape_player_results_to_dataframe(timetable_url: str, player_name: str, headless: bool = True) -> Tuple[str, Optional[pd.DataFrame]]:
+def scrape_player_results_to_dataframe(timetable_url: str, player_name: str, headless: bool = True):
     """
     選手の結果を取得してDataFrameとして返す
     
@@ -767,13 +767,13 @@ def scrape_player_results_to_dataframe(timetable_url: str, player_name: str, hea
             for event, count in event_counts.items():
                 print(f"   {event}: {count}回")
         
-        return meet_name, df
+        return df
         
     except Exception as e:
         print(f"❌ エラーが発生しました: {e}")
         import traceback
         traceback.print_exc()
-        return "不明な大会", None
+        return None
         
     finally:
         if scraper and scraper.driver:
