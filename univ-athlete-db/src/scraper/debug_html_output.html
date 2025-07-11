@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja" ng-app="Nans21vApp" ng-controller="TimeTableCtrl as pTimeTable">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/apple-touch-icon-180x180-precomposed.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../images/apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="../images/apple-touch-icon-152x152-precomposed.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="../images/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="../images/apple-touch-icon-144x144-precomposed.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="../images/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="../images/apple-touch-icon-120x120-precomposed.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="../images/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="../images/apple-touch-icon-114x114-precomposed.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="../images/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="../images/apple-touch-icon-76x76-precomposed.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="../images/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="../images/apple-touch-icon-72x72-precomposed.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="../images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="../images/apple-touch-icon-60x60-precomposed.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="../images/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="../images/apple-touch-icon-57x57-precomposed.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="../images/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" href="../images/apple-touch-icon-precomposed.png">
+    <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+
+    <title>{{pTimeTable.prmTitle}}</title>
+
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/TimeTable.css">
+
+    <script src="../js/lib/jquery.min.js"></script>
+    <script src="../js/lib/angular.min.js"></script>
+    <script src="../js/lib/angular-sanitize.min.js"></script>
+
+    <script src="../js/AppCom.js"></script>
+    <script src="../js/TimeTable.js"></script>
+
+    <script src="../js/lib/ScrollAdjust.js"></script>
+    <!-- <script src="../js/lib/listmousedragscroll.min.js"></script> -->
+    <script src="../js/lib/DragScroll.js"></script>
+  </head>
+
+  <body ng-body-load>
+
+    <header>
+      <div class="outbox_header" ng-if="pTimeTable.isSmartPhone">
+        <div class="box_header_btn_timetable">
+          <div class="box_btnstyleA">
+            <button type="button" class="btn_style2 btn_style_header radius5 f_right" ng-click="pTimeTable.SyozokuDispChange()">
+              <span ng-bind="pTimeTable.prmSyozokubetsuBtnName"></span>
+            </button>
+            <button type="button" class="btn_style2 btn_style_header radius5 f_right" ng-click="pTimeTable.DispChange()">
+              <span ng-bind="pTimeTable.prmKyogibetsuBtnName"></span>
+            </button>
+          </div>
+        </div>
+        <div class="box_header_title_timetable">
+          <span ng-bind="pTimeTable.prmTitle"></span>
+        </div>
+      </div>
+
+      <div class="outbox_header" ng-if="!pTimeTable.isSmartPhone">
+        <div class="box_header_title_timetable_pc">
+          <span ng-bind="pTimeTable.prmTitle"></span>
+        </div>
+        <div class="box_header_btn_timetable_pc">
+          <div class="box_btnstyleA">
+            <button type="button" class="btn_style2 btn_style_header radius5 f_right" ng-click="pTimeTable.SyozokuDispChange()">
+              <span ng-bind="pTimeTable.prmSyozokubetsuBtnName"></span>
+            </button>
+            <button type="button" class="btn_style2 btn_style_header radius5 f_right" ng-click="pTimeTable.DispChange()">
+              <span ng-bind="pTimeTable.prmKyogibetsuBtnName"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <content>
+      <div class="outbox_content_scroll">
+        <div class="outbox_content">
+          <div class="outbox_tournament_title">
+            <div>
+              <div class="box_tournament_title" ng-bind="pTimeTable.datTaikai.TaikaiMeiKikan"></div>
+              <div class="box_tournament_title_rightmoji" ng-if="pTimeTable.datTaikai.PoweredByText!=''" ng-bind="pTimeTable.datTaikai.PoweredByText" ng-style="{color:pTimeTable.datTaikai.PoweredByColor}"></div>
+            </div>
+          </div>
+
+          <div class="box_content">
+            <div class="box_dateeventsex_total" ng-if="pTimeTable.prmKyogibetsu=='1'">
+              <div class="box_dateeventsex">
+                <div class="box_date">
+                  <label>
+                    <select name="prmHizuke" ng-model="pTimeTable.prmHizuke" ng-change="pTimeTable.Show()">
+                      <option ng-repeat="rowNitteiData in pTimeTable.prmAryHiduke" value="{{rowNitteiData.Key}}" ng-bind="rowNitteiData.Value"></option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="box_eventsex">
+                  <div class="box_radio">
+                    <input type="radio" name="prmShumoku" id="prmShumoku_a" ng-model="pTimeTable.prmShumoku" value="a" ng-change="pTimeTable.Show()">
+                    <label for="prmShumoku_a" class="border_right_none">全て</label>
+                    <input type="radio" name="prmShumoku" id="prmShumoku_1" ng-model="pTimeTable.prmShumoku" value="1" ng-change="pTimeTable.Show()">
+                    <label for="prmShumoku_1" class="border_right_none">ﾄﾗｯｸ</label>
+                    <input type="radio" name="prmShumoku" id="prmShumoku_2" ng-model="pTimeTable.prmShumoku" value="2" ng-change="pTimeTable.Show()">
+                    <label for="prmShumoku_2" class="border_right_none">跳躍</label>
+                    <input type="radio" name="prmShumoku" id="prmShumoku_3" ng-model="pTimeTable.prmShumoku" value="3" ng-change="pTimeTable.Show()">
+                    <label for="prmShumoku_3">投てき</label>
+                  </div>
+
+                  <div class="box_radio">
+                    <input type="radio" name="prmSeibetsu" id="prmSeibetsu_a" ng-model="pTimeTable.prmSeibetsu" value="a" ng-change="pTimeTable.Show()">
+                    <label for="prmSeibetsu_a" class="border_right_none">全て</label>
+                    <input type="radio" name="prmSeibetsu" id="prmSeibetsu_1" ng-model="pTimeTable.prmSeibetsu" value="1" ng-change="pTimeTable.Show()">
+                    <label for="prmSeibetsu_1" class="border_right_none">男子</label>
+                    <input type="radio" name="prmSeibetsu" id="prmSeibetsu_2" ng-model="pTimeTable.prmSeibetsu" value="2" ng-change="pTimeTable.Show()">
+                    <label for="prmSeibetsu_2">女子</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="box_total">
+                <div class="box_btn">
+                  <button type="button" class="btn_style1 btn_style_total radius5"
+                          ng-class="{black:pTimeTable.datTimeTable.TimeraceFlg=='1', black_disabled:pTimeTable.datTimeTable.TimeraceFlg!='1'}"
+                          onclick="location.href='./timeraceshukei/TimeraceShukei.html'">ﾀｲﾑﾚｰｽ集計</button><!--
+                  --><button type="button" class="btn_style1 btn_style_total radius5"
+                              ng-class="{black:pTimeTable.datTimeTable.KonseiFlg=='1', black_disabled:pTimeTable.datTimeTable.KonseiFlg!='1'}"
+                              onclick="location.href='./konseishukei/KonseiShukei.html'">混成集計</button><!--
+                  --><button type="button" class="btn_style1 btn_style_total radius5"
+                              ng-class="{black:pTimeTable.datTimeTable.TaikouFlg=='1', black_disabled:pTimeTable.datTimeTable.TaikouFlg!='1'}"
+                              onclick="location.href='./taikoushukei/TaikouShukei.html'">対抗戦集計</button><!--
+                  --><button type="button" class="btn_style1 btn_style_total radius5"
+                              onclick="location.href='./condition/Condition.html'">ｺﾝﾃﾞｨｼｮﾝ</button>
+                </div>
+              </div>
+            </div>
+            <div ng-if="pTimeTable.prmKyogibetsu=='2'">
+              <div class="box_kyogi">
+                <label>
+                  <select name="prmKyotibetsuSelect" ng-model="pTimeTable.prmKyotibetsuSelect" ng-change="pTimeTable.ShowKyogi()">
+                    <option value="">競技名選択</option>
+                    <option ng-repeat="rowKyogiData in pTimeTable.datTimeTable.KyogiList" value="{{rowKyogiData}}" ng-bind="rowKyogiData"></option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="outbox_table">
+
+            <div ng-if="pTimeTable.prmKyogibetsu=='1'">
+              <table class="table_timetable">
+                <tr>
+                  <th class="KaishiJikan">開始時刻</th>
+                  <th class="KyogiMei">競技名</th>
+                  <th class="Round">ﾗｳﾝﾄﾞ</th>
+                  <th class="Kumi">組</th>
+                  <th class="Chakudori">着取</th>
+                </tr>
+                <tr ng-repeat="rowShowData in pTimeTable.datShowData"
+                    ng-class="{entering:rowShowData.KyogiKekkaInputFlg=='1', dns:rowShowData.KumiwakeFlg=='0'}"
+                    ng-repeat-finished>
+                  <td ng-bind="rowShowData.KaishiJikan"></td>
+                  <td ng-bind="rowShowData.KyogiMei"></td>
+                  <td>
+                    <a ng-href="{{rowShowData.LinkRound}}" ng-bind="rowShowData.Round" ng-if="rowShowData.KumiwakeFlg=='1'"></a>
+                    <span ng-bind="rowShowData.Round" ng-if="rowShowData.KumiwakeFlg=='0'"></span>
+                  </td>
+                  <td>
+                    <a ng-href="{{rowShowData.LinkKumi}}" ng-bind="rowShowData.Kumi" ng-if="rowShowData.KumiwakeFlg=='1'"></a>
+                    <span ng-bind="rowShowData.Kumi" ng-if="rowShowData.KumiwakeFlg=='0'"></span>
+                  </td>
+                  <td ng-bind="rowShowData.Chakudori"></td>
+                </tr>
+              </table>
+            </div>
+
+            <div ng-if="pTimeTable.prmKyogibetsu=='2'">
+
+              <table class="table_timetable">
+                <tr>
+                  <th class="KyogiMei2">競技名</th>
+                  <th class="Round">ﾗｳﾝﾄﾞ</th>
+                  <th class="Kumi">組</th>
+                  <th class="Chakudori">着取</th>
+                </tr>
+                <tr ng-repeat="rowShowData in pTimeTable.datShowDataKyogiList"
+                    ng-class="{entering:rowShowData.KyogiKekkaInputFlg=='1', dns:rowShowData.KumiwakeFlg=='0'}"
+                    ng-repeat-finished>
+                  <td ng-bind="rowShowData.KyogiMei"></td>
+                  <td>
+                    <a ng-href="{{rowShowData.LinkRound}}" ng-bind="rowShowData.Round" ng-if="rowShowData.KumiwakeFlg=='1'"></a>
+                    <span ng-bind="rowShowData.Round" ng-if="rowShowData.KumiwakeFlg=='0'"></span>
+                  </td>
+                  <td>
+                    <a ng-href="{{rowShowData.LinkKumi}}" ng-bind="rowShowData.Kumi" ng-if="rowShowData.KumiwakeFlg=='1'"></a>
+                    <span ng-bind="rowShowData.Kumi" ng-if="rowShowData.KumiwakeFlg=='0'"></span>
+                  </td>
+                  <td ng-bind="rowShowData.Chakudori"></td>
+                </tr>
+              </table>
+
+            </div>
+
+
+            <div ng-if="pTimeTable.prmKyogibetsu=='3'">
+              <table class="table_timetable">
+                <tr>
+                  <th class="SyozokuNo1">所属NO</th>
+                  <th class="SyozokuMei1">所属名</th>
+                  <th class="SyozokuChi1">所属地</th>
+                  <th class="SyozokuNo2">所属NO</th>
+                  <th class="SyozokuMei2">所属名</th>
+                  <th class="SyozokuChi2">所属地</th>
+                </tr>
+                <tr ng-repeat="rowShowData in pTimeTable.datShowDataSyozoku" ng-repeat-finished>
+                  <td ng-bind="rowShowData.SYOZOKUNO1"></td>
+                  <td><a ng-href="{{rowShowData.LINK1}}" ng-bind-html="rowShowData.SYOZOKUMEI1"></a></td>
+                  <td ng-bind="rowShowData.SYOZOKUTIMEI1"></td>
+                  <td ng-bind="rowShowData.SYOZOKUNO2"></td>
+                  <td><a ng-href="{{rowShowData.LINK2}}" ng-bind-html="rowShowData.SYOZOKUMEI2"></a></td>
+                  <td ng-bind="rowShowData.SYOZOKUTIMEI2"></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </content>
+
+    <script type="text/javascript">
+      $(".outbox_table").dragScroll();
+    </script>
+
+  </body>
+</html>

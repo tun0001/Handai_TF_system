@@ -565,6 +565,68 @@ class UniversityResultsScraper(JavaScriptScraper):
             
         return df
 
+def scrape_univ_results_to_dataframe(timetable_url: str, university_name: str, headless: bool = True) -> Tuple[str, Optional[pd.DataFrame]]:
+    """
+    選手の結果を取得してDataFrameとして返す
+    
+    Args:
+        timetable_url: 大会のタイムテーブルURL
+        player_name: 選手名
+        headless: Seleniumをヘッドレスモードで実行するか
+        
+    Returns:
+        Tuple[str, Optional[pd.DataFrame]]: (大会名, 結果DataFrame)
+    """
+    print(f"🏆 大学別結果取得システム")
+    print(f"📅 対象大会: {timetable_url}")
+    print(f"🏫 対象大学: {university_name}")
+    print()
+    
+    # スクレイパーを初期化
+    scraper = UniversityResultsScraper(headless=True)
+    
+    try:
+        # 大学の結果を取得
+        results = scraper.scrape_university_results(timetable_url, university_name)
+        
+        if results:
+            print(f"\n✅ 取得成功: {len(results)}名の選手結果を取得")
+            
+            # DataFrame出力オプション
+            try:
+                df = scraper.results_to_dataframe(results)
+                print(df[df['記録']==""])  # 記録がある選手のみ表示
+                #csv_filename = f"university_results_{university_name}_{int(time.time())}.csv"
+                #df.to_csv(csv_filename, index=False, encoding='utf-8-sig')
+                #print(f"📊 CSVファイルも保存: {csv_filename}")
+                
+                # 簡単な統計表示
+                print(f"\n📈 DataFrame概要:")
+                print(f"   行数: {len(df)}")
+                print(f"   列数: {len(df.columns)}")
+                if len(df) > 0:
+                    print(f"   競技種目数: {df['event_name'].nunique()}")
+            except Exception as e:
+                print(f"⚠️ DataFrame処理エラー: {e}")
+            
+            # JSONデータを保存
+            scraper.save_results_data(results, university_name)
+        else:
+            print("❌ 結果データが取得できませんでした")
+            
+    except Exception as e:
+        print(f"❌ エラーが発生しました: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    finally:
+        # リソースのクリーンアップ
+        if scraper.driver:
+            scraper.driver.quit()
+
+
+
+
 def main():
     """メイン実行関数"""
     # コマンドライン引数のチェック
