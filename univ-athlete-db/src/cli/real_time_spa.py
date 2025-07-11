@@ -66,6 +66,7 @@ def run_real_time_spa(url, univ, spread_sheet_ID_conference, spread_sheet_ID_mem
     print(df_events[-9:])
 
     df_events_change=change_column_names(df_events)
+    conference_name = conference_info['name']
     df_events_change['大会'] = conference_info['name']
     df_events_change['所属'] = univ
     df_events_change['大学名'] = univ
