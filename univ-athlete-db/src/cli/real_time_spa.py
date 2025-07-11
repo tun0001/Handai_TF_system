@@ -137,6 +137,23 @@ def run_real_time_spa(url, univ, spread_sheet_ID_conference, spread_sheet_ID_mem
             sheet_name=name,
             creds_dict=creds_dict
         )
+        df_all=load_sheet(
+            spreadsheet_id=spread_sheet_ID_member,
+            sheet_name=name,
+            creds_dict=creds_dict
+        )
+        df_result_send = df_all[df_all['大会'] == conference_name]
+        if not df_result_send.empty:
+            df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
+        else:
+            df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
+        print(df_result_send)
+        write_to_new_sheet(
+            spreadsheet_id=spread_sheet_ID_conference,
+            sheet_name=conference_name,
+            data=df_result_send.to_dict(orient='records'),
+            cred_dict=creds_dict
+        )
     
 
 

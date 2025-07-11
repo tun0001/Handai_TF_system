@@ -7,7 +7,8 @@ if __name__ == "__main__":
     #url= "https://jaaf-shiga.com/results/2025/0712pch/shtml/TimeTable.html"
     #url="https://tsriku.stars.ne.jp/htmlR6/240727/shtml/SyozokuPlayer.html"
     #url="https://tsriku.stars.ne.jp/htmlR6/240727/shtml/TimeTable.html"
-    url="http://nagoyatf.xyz/chita2/nans21v/shtml/TimeTable.html"
+    #url="http://nagoyatf.xyz/chita2/nans21v/shtml/TimeTable.html"
+    url="https://dp17057472.lolipop.jp/HP/0621/shtml/TimeTable.html"
     #TimeTable.htmlじゃないとむり    
     spread_sheet_ID_conference=os.getenv("SPREAD_SHEET_ID_CONFERENCE")
     spread_sheet_ID_member=os.getenv("SPREAD_SHEET_ID_MEMBER")
