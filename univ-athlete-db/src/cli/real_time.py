@@ -52,7 +52,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
         return
     
     conference_name=parse_conference_title(html)
-    add_conference_list(conference_name)
+    #add_conference_list(conference_name)
     events_name= parse_each_event_name_kaisizikoku(html)
     print(f"大会名: {conference_name}")
     #print(f"競技名: {events_name}")
@@ -244,7 +244,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                             # channel_id, token は環境変数から取得
                             #hannel_id = int(os.environ["DISCORD_CHANNEL_ID"])
                             channel_id = int(1380200984256450751)
-                            token = os.environ["DISCORD_BOT_TOKEN")
+                            token = os.environ["DISCORD_BOT_TOKEN"]
                             print(f"▶️ Discord に投稿: channel={channel_id}, thread={thread_name}")
                             # 非同期関数を実行
                             asyncio.run(send_to_thread(
