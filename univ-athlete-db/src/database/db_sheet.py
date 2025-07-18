@@ -784,7 +784,6 @@ def overwrite_sheet(
     ws.update("A1", payload)
 
 
-
 #--------------
 def sort_dataframe_by_date(df: pd.DataFrame) -> pd.DataFrame:
     """
