@@ -540,7 +540,210 @@ def member_best_to_sheet(
         #     data=df_season_records,
         #     cred_dict=creds_dict
         # )
+
+def member_sb_to_sheet(
+    spreadsheet_id_member: str,
+    spreadsheet_id_sb: str,
+    creds_dict: dict | None = None,
+    season: int = 2025
+):
+    """
+    メンバーシートから指定年のSB（シーズンベスト）記録を抽出してSBシートに転記する
+    さらに各種目毎のワークシートを作成してSBランキングを作成する
+    cred_dict: 認証情報の辞書形式
+    """
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
     
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    client = gspread.authorize(creds)
+    
+    # メンバーシートを開く
+    member_sheets = client.open_by_key(spreadsheet_id_member)
+    member_list = load_member_list()
+    df_sb = pd.DataFrame()
+    
+    for member in member_list:
+        try:
+            member_sheet = member_sheets.worksheet(member)
+            print(f"Processing member: {member}")
+            time.sleep(2)  # API制限を避けるために少し待機
+        except gspread.exceptions.WorksheetNotFound:
+            print(f"Member sheet '{member}' not found in spreadsheet '{spreadsheet_id_member}'.")
+            continue
+            
+        data = member_sheet.get_all_values()
+        df_member = pd.DataFrame(data[1:], columns=data[0])
+        df_member['member_name'] = member  # メンバー名を追加
+        
+        # Check if 'event' column exists, if not, add processing to handle it
+        if 'event' not in df_member.columns:
+            # Try to create event column from other columns if available
+            if 'type' in df_member.columns and '種目' in df_member.columns:
+                df_member = get_event_type(df_member)
+                df_member = get_event_name(df_member)
+            elif '種目' in df_member.columns:
+                # Create a simple event column using the '種目' column
+                df_member['event'] = df_member['種目']
+            else:
+                # Skip this member if no event information is available
+                print(f"Skipping member {member}: No event information found")
+                continue
+        
+        # 指定年のデータのみをフィルタリング
+        if 'season' in df_member.columns:
+            df_member = df_member[df_member['season'].astype(str) == str(season)]
+        
+        if df_member.empty:
+            print(f"No data found for year {season} for member {member}")
+            continue
+        
+        event_list = df_member['event'].unique()
+        for event in event_list:
+            df_event = df_member[df_member['event'] == event]
+            # SB（シーズンベスト）を抽出
+            if 'SB' in df_event.columns:
+                df_event = df_event[df_event['SB'] != ""]
+                if not df_event.empty:
+                    df_sb = pd.concat([df_sb, df_event], ignore_index=True)
+    
+    if df_sb.empty:
+        print(f"No SB records found for year {season}")
+        return
+    
+    print(f"Found SB records for members: {df_sb['member_name'].unique()}")
+    
+    # Create a pivot table style dataframe with one row per member
+    pivot_records = pd.DataFrame(columns=['member_name'])
+    pivot_records['member_name'] = df_sb['member_name'].unique()
+
+    # For each unique member and event, extract SB records with their wind info
+    for member in df_sb['member_name'].unique():
+        member_data = df_sb[df_sb['member_name'] == member]
+        print(f"Processing member: {member} for year: {season}")
+        
+        for event in member_data['event'].unique():
+            event_data = member_data[member_data['event'] == event]
+            
+            # Get rows with SB
+            sb_row = event_data[event_data['SB'] == 'SB']
+            
+            # Add SB record for the specified year
+            if not sb_row.empty:
+                record_sb = sb_row.iloc[0]['記録(公認)']
+                wind_sb = f" ({sb_row.iloc[0]['風(公認)']})" if '風(公認)' in sb_row.columns and not pd.isna(sb_row.iloc[0]['風(公認)']) and sb_row.iloc[0]['風(公認)'] != "" else ""
+                
+                # Combine record and wind into a single formatted column (only add wind if it exists)
+                if wind_sb:
+                    pivot_records.loc[pivot_records['member_name'] == member, f"{event}(風)"] = f"{record_sb}{wind_sb}"
+                else:
+                    pivot_records.loc[pivot_records['member_name'] == member, f"{event}"] = record_sb
+
+    # Use pivot_records as the final data
+    df_year_records = pivot_records
+    sheet_name = f"{season}_member_sb"
+
+    overwrite_sheet(
+        spreadsheet_id=spreadsheet_id_sb,
+        sheet_name=sheet_name,
+        data=df_year_records,
+        cred_dict=creds_dict
+    )
+    
+    # 各種目毎のランキングシートを作成
+    # 性別を'種別'カラムから取得
+    if '種別' in df_sb.columns:
+        df_sb=add_gender_column(df_sb)
+        #df_sb['gender'] = df_sb['種別'].apply(extract_gender)
+    else:
+        df_sb['gender'] = '不明'  # 種別カラムがない場合のフォールバック
+    
+    # 各種目・性別毎にランキングシートを作成
+    events = df_sb['event'].unique()
+    genders = df_sb['gender'].unique()
+    
+    for event in events:
+        for gender in genders:
+            # 該当する種目・性別のデータを抽出
+            event_gender_data = df_sb[(df_sb['event'] == event) & (df_sb['gender'] == gender)]
+            
+            if event_gender_data.empty:
+                continue
+            
+            # ランキング用のデータを準備
+            ranking_data = []
+            for _, row in event_gender_data.iterrows():
+                ranking_data.append({
+                    '順位': '',  # 後で設定
+                    '氏名': row['member_name'],
+                    '記録': row['記録(公認)'],
+                    '記録_比較': row['記録(比較)'],
+                    '風': row.get('風(公認)', ''),
+                    '大会': row.get('大会', ''),
+                    '日付': row.get('日付', '')
+                })
+            
+            # データフレームに変換
+            ranking_df = pd.DataFrame(ranking_data)
+            
+            if ranking_df.empty:
+                continue
+            
+            # 記録でソート（跳躍・投擲は降順、それ以外は昇順）
+            try:
+                # 記録を比較用の数値に変換
+                #ranking_df['記録_比較'] = ranking_df['記録'].apply(lambda x: extract_compare_record(x) if pd.notna(x) else float('inf'))
+                
+                # 種目のタイプを判定
+                event_type = event_gender_data['type'].iloc[0] if 'type' in event_gender_data.columns else ''
+                #print(event_type)
+                
+                # 記録_比較を数値に変換してソート
+                ranking_df['記録_比較_numeric'] = pd.to_numeric(ranking_df['記録_比較'], errors='coerce')
+                
+                if any(event_type_check in event_type for event_type_check in ['Jump', 'Throw', 'Score']):
+                    # 跳躍・投擲・複合競技は降順（大きい値が良い）
+                    #print(f"Sorting {event_type}")
+                    #print(ranking_df['記録_比較'])
+                    ranking_df = ranking_df.sort_values('記録_比較_numeric', ascending=False)
+                    #print(ranking_df['記録_比較'])
+
+                else:
+                    # トラック競技は昇順（小さい値が良い）
+                    ranking_df = ranking_df.sort_values('記録_比較_numeric', ascending=True)
+                
+                # 一時的な数値カラムを削除
+                ranking_df = ranking_df.drop('記録_比較_numeric', axis=1)
+                
+                # 順位を設定
+                ranking_df['順位'] = range(1, len(ranking_df) + 1)
+                
+                # 比較用カラムを削除
+                ranking_df = ranking_df.drop('記録_比較', axis=1)
+                
+            except Exception as e:
+                print(f"Error sorting records for {event} {gender}: {e}")
+                # ソートに失敗した場合はそのまま順位を設定
+                ranking_df['順位'] = range(1, len(ranking_df) + 1)
+            
+            # シート名を作成（文字数制限を考慮）
+            sheet_name_ranking = f"{season}_{gender}_{event}"[:100]
+            
+            # ランキングシートに書き込み
+            try:
+                overwrite_sheet(
+                    spreadsheet_id=spreadsheet_id_sb,
+                    sheet_name=sheet_name_ranking,
+                    data=ranking_df,
+                    cred_dict=creds_dict
+                )
+                print(f"Created ranking sheet: {sheet_name_ranking}")
+                time.sleep(1)  # API制限を避けるため
+            except Exception as e:
+                print(f"Error creating ranking sheet {sheet_name_ranking}: {e}")
+
 def overwrite_sheet(
     spreadsheet_id: str,
     sheet_name: str,
@@ -1218,8 +1421,9 @@ def process_sheet(
     df_13 = add_pb_column(df_12)  # PB列を追加
     df_14 = add_sb_column(df_13)  # SB列を追加
     df_15 = add_ub_column(df_14)  # UB列を追加
+    df_16 = add_gender_column(df_15)  # 性別列を追加
     
-    df_sorted = df_15
+    df_sorted = df_16
     # ソート用のカラムを削除
     #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
 
@@ -1232,6 +1436,28 @@ def process_sheet(
     # シートを更新
     worksheet.clear()  # 既存のデータをクリア
     worksheet.update('A1', updated_data)  # 新しいデータを書き込む
+
+
+def add_gender_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    '種別'列から性別を抽出して新しい列を追加する
+    """
+    if '種別' in df.columns:
+        # 性別を抽出する関数
+        def extract_gender(category):
+            if not isinstance(category, str):
+                return ""
+            if "男" in category:
+                return "男子"
+            elif "女" in category:
+                return "女子"
+            else:
+                return ""
+        
+        df['gender'] = df['種別'].apply(extract_gender)
+        return df
+    else:
+        return df
 
 def add_pb_column(df: pd.DataFrame) -> pd.DataFrame:
     """
