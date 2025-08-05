@@ -201,6 +201,11 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                     )
                     #--------
                     time.sleep(1)  # API制限対策のため1秒待機
+                    process_sheet( 
+                        spreadsheet_id=spread_sheet_ID_member,
+                        sheet_name=name,
+                        creds_dict=creds_dict
+                    )
                     # delete_sheet(
                     #     spreadsheet_id=spread_sheet_ID_conference,
                     #     sheet_name=name,
