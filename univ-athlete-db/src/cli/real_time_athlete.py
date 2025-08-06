@@ -46,6 +46,7 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
     #     return
     df_results = scrape_athlete_ranking(url, univ=univ)
     print(df_results)
+    df_results = df_results[100:]
     #df_results = df_results[df_results['種目']=="女子対校走幅跳"]
     conference_name=df_results['大会'].iloc[1]
 
@@ -218,8 +219,8 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
         print(f"選手名: {name}, 種目: {event_name}, 種別: {event_type}")
         #print(df_result)
         #print(name)
-        #time.sleep(1)  # API制限対策のため1秒待機
-        # write_to_new_sheet(
+        # time.sleep(1)  # API制限対策のため1秒待機
+        # # write_to_new_sheet(
         #     spreadsheet_id=spread_sheet_ID_member,
         #     sheet_name=name,
         #     data=df_result.to_dict(),
@@ -227,16 +228,11 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
         # )
         
         # # #--------
-        #time.sleep(1)  # API制限対策のため1秒待機
+        # time.sleep(2)  # API制限対策のため1秒待機
         # process_sheet( 
         #     spreadsheet_id=spread_sheet_ID_member,
         #     sheet_name=name,
         #     creds_dict=creds_dict
-        # )
-        # delete_sheet(
-        #     spreadsheet_id=spread_sheet_ID_conference,
-        #     sheet_name=name,
-        #     cred_dict=creds_dict
         # )
         if announce_discord:    
             if not df_result.empty:

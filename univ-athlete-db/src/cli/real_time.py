@@ -170,6 +170,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                                 name = "女子リレー"
                             else:
                                 name = "リレー"
+                            df_results.at[idx, '所属'] = univ
                         else:
                             name = "リレー"
                     else:
