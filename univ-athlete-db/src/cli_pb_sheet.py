@@ -1,7 +1,7 @@
 import os
 import json
 from database.db_sheet import *
-
+import pandas as pd
 
 if __name__ == "__main__":
     #url= "https://jaaf-shiga.com/results/2025/0712pch/shtml/TimeTable.html"
@@ -17,11 +17,24 @@ if __name__ == "__main__":
     creds_dict=os.getenv("GOOGLE_ACCOUNT_KEY")
     creds_dict = json.loads(creds_dict)
     
-    member_best_to_sheet(
-        spreadsheet_id_member=spread_sheet_ID_member,
-        spreadsheet_id_best=spread_sheet_ID_best,
+    # member_best_to_sheet(
+    #     spreadsheet_id_member=spread_sheet_ID_member,
+    #     spreadsheet_id_best=spread_sheet_ID_best,
+    #     creds_dict=creds_dict
+    # )
+    df_pb_all=load_sheet(
+        spreadsheet_id=spread_sheet_ID_pb,
+        sheet_name="member_pb",
         creds_dict=creds_dict
     )
+
+    overwrite_sheet(
+        spreadsheet_id=spread_sheet_ID_member,
+        sheet_name="部員一覧",
+        data=df_pb_all,
+        cred_dict=creds_dict
+    )
+
 
     # member_pb_to_sheet(
     #     spreadsheet_id_member=spread_sheet_ID_member,

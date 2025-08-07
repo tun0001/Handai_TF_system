@@ -332,6 +332,94 @@ def merge_sheets(
     target_worksheet.clear()
     target_worksheet.update('A1', updated_data)
 
+def set_member_active(
+    spread_sheet_id: str,
+    member_name: str,
+    ):
+    """
+    スプレッドシートの部員一覧シートで指定されたメンバーのActiveカラムを"Active"に設定する
+    """
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
+    client = gspread.authorize(creds)
+    sh = client.open_by_key(spread_sheet_id)
+
+    try:
+        worksheet = sh.worksheet("部員一覧")
+    except gspread.exceptions.WorksheetNotFound:
+        print(f"Worksheet '部員一覧' not found in spreadsheet '{spread_sheet_id}'.")
+        return
+
+    # シートの全データ取得
+    data = worksheet.get_all_values()
+
+    if not data or len(data) < 2:
+        print("No data found in the sheet.")
+        return
+
+    # DataFrameに変換
+    df = pd.DataFrame(data[1:], columns=data[0])
+
+    # member_nameカラムが存在するか確認
+    if 'member_name' not in df.columns:
+        print("'member_name' column not found in the sheet.")
+        return
+
+    # Activeカラムが存在しない場合は追加
+    if 'Active' not in df.columns:
+        df['Active'] = ""
+
+    # 指定されたメンバーのActiveカラムを"Active"に設定
+    member_found = False
+    for idx, row in df.iterrows():
+        if row['member_name'] == member_name:
+            df.at[idx, 'Active'] = "Active"
+            member_found = True
+            # メンバーの行を一番上に移動
+            
+            break
+
+    if not member_found:
+        # メンバーが見つからない場合は新しい行として追加
+        new_row = pd.DataFrame({'member_name': [member_name], 'Active': ['Active']})
+        df = pd.concat([new_row, df], ignore_index=True)
+        print(f"Added new member '{member_name}' and set as Active.")
+        return
+    member_row = df.loc[df['member_name'] == member_name].copy()
+    df_without_member = df.loc[df['member_name'] != member_name].copy()
+    df = pd.concat([member_row, df_without_member], ignore_index=True)
+    # シートを更新
+    updated_data = [df.columns.tolist()] + df.values.tolist()
+    worksheet.clear()
+    worksheet.update('A1', updated_data)
+    print(f"Set '{member_name}' as Active in the member list.")
+
+def write_member_record_to_sheet(
+    spreadsheet_id: str,
+    sheet_name: str | int,
+    data,
+    cred_dict: dict | None = None,
+    ):
+    #-------------
+    #部員一覧のsheet_nameをアクティブにする
+    
+    
+
+
+
+    #----------------
+    write_to_new_sheet(
+        spreadsheet_id=spreadsheet_id,
+        sheet_name=sheet_name,
+        data=data,
+        cred_dict=cred_dict
+    )
+
+
 def write_to_new_sheet(
     spreadsheet_id: str,
     sheet_name: str | int,
@@ -842,7 +930,7 @@ def member_pb_to_sheet(
     else:
         df_pb['gender'] = '不明'  # 種別カラムがない場合のフォールバック
     # 全角スペースを削除
-    df_pb['member_name'] = df_pb['member_name'].str.replace('　', '', regex=False)
+    
     # Create a pivot table style dataframe with one row per member and gender as the second column
     pivot_records = pd.DataFrame({
         'member_name': df_pb['member_name'].unique()
@@ -886,10 +974,20 @@ def member_pb_to_sheet(
         data=df_pb_records,
         cred_dict=creds_dict
     )
-    
+    df_pb_all= df_pb.copy()
+    df_pb_all['member_name'] = df_pb_all['member_name'].str.replace('　', '', regex=False)
+    df_pb_all = reorder_by_event(df_pb_all)
+    overwrite_sheet(
+        spreadsheet_id=spreadsheet_id_pb,
+        sheet_name="member_pb_all",
+        data=df_pb_all,
+        cred_dict=creds_dict
+    )
+    #df_pb['member_name'] = df_pb['member_name'].str.replace('　', '', regex=False)
     # 各種目毎のランキングシートを作成
     events = df_pb['event'].unique()
     genders = df_pb['gender'].unique()
+    
     
     for event in events:
         for gender in genders:
@@ -1103,15 +1201,50 @@ def get_season(df: pd.DataFrame) -> pd.DataFrame:
     else:
         return df
 
-# 重複行を削除する処理を関数化
+def remove_duplicates_from_df_excluding_pb_sb_ub(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    PB, SBカラムを除いた要素で重複行を削除する
+    """
+    # PB, SBカラムを除いたカラムリストを作成
+    columns_to_check = [col for col in df.columns if col not in ['PB', 'SB' ,'UB']]
+    
+    # 指定したカラムのみで重複を削除
+    return df.drop_duplicates(subset=columns_to_check)
 def remove_duplicates_from_df(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates()
+
+def reorder_by_event(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    'event'列の値に基づいてDataFrameを並べ替える
+    """
+    order_list=[
+        "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
+        "5000mW", "10000mW", "20kW", "50kmW",
+        "110mH", "100mH", "300mH", "400mH", "3000mSC",
+        "4x100mR", "4x400mR", "4x200mR", "4x800mR",
+        "走高跳", "走幅跳", "三段跳", "棒高跳",
+        "砲丸投", "円盤投", "ハンマー投", "やり投",
+        "十種競技", "七種競技",
+        "ハーフマラソン", "フルマラソン"
+    ]
+    if 'event' in df.columns:
+        # order_listに基づいてDataFrameを並べ替え
+        # order_listにない種目は最後に配置
+        def get_order_index(event):
+            try:
+                return order_list.index(event)
+            except ValueError:
+                return len(order_list)  # order_listにない場合は最後に配置
+        
+        return df.sort_values(by='event', key=lambda x: x.map(get_order_index))
+    else:
+        return df
 
 def reorder_columns_by_priority(df: pd.DataFrame) -> pd.DataFrame:
         """
         優先カラムリストに従ってDataFrameのカラム順を並べ替える
         """
-        priority_columns = ['日付', 'No.', '氏名', '氏名_2','学年','チーム／メンバー','チーム／メンバー_2','チーム／メンバー_3', '所属', '種目', 'ラウンド', 'レーン','組','記録', '風', 'コメント', '大会']
+        priority_columns = ['日付','氏名','学年','チーム／メンバー','チーム／メンバー_2','チーム／メンバー_3', '所属', 'event','記録','風(公認)','PB','UB','SB', '大会', 'ラウンド', 'レーン','組',  'コメント']
         columns = df.columns.tolist()
         ordered_priority = [col for col in priority_columns if col in columns]
         remaining = [col for col in columns if col not in ordered_priority]
@@ -1128,12 +1261,14 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
             # 全角→半角変換（数字・英字）
             # 事前にint型からstr型に変換
             #print()
+            #print(event_name_1)
             if isinstance(event_name_2, int):
                 event_name_2 = str(event_name_2)
             if isinstance(event_name_1, int):
                 event_name_1 = str(event_name_1)
             # event_name_2優先、なければevent_name_1
             event_name = event_name_2 if event_name_2 else event_name_1
+            #print(event_name)
             # 全角→半角変換（数字・英字・記号）
             event_name = event_name.translate(str.maketrans(
                 '０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ×',
@@ -1159,7 +1294,7 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
             "十種競技", "七種競技"
             ]
             event_half_list = [
-            "ハーフマラソン"
+            "ハーフマラソン","フルマラソン"
             ]
 
             # タイプに応じてリストを選択
@@ -1242,10 +1377,10 @@ def get_grade_column(df: pd.DataFrame) -> pd.DataFrame:
         # Create the column if it doesn't exist
         if '学年' not in df.columns:
             df['学年'] = ""
-        # Then assign values
-            df = df.copy()  # Ensure we are working with a copy
-            # Apply the extraction function to the '氏名' column
-            df['学年'] = df['氏名'].apply(extract_grade)
+        
+        # Only apply extract_grade to rows where 学年 is empty
+        mask = (df['学年'] == "") | (df['学年'].isna())
+        df.loc[mask, '学年'] = df.loc[mask, '氏名'].apply(extract_grade)
         return df
     else:
         return df
@@ -1350,7 +1485,7 @@ def get_event_type(df: pd.DataFrame) -> pd.DataFrame:
                 event_type = 'Track'
             return event_type
         
-        df['type'] = df.apply(lambda row: determine_event_type(row['種目'], row['競技']) if '競技' in df.columns else row['種目'], axis=1)
+        df['type'] = df.apply(lambda row: determine_event_type(row['種目'], row['競技']) if '競技' in df.columns else determine_event_type(row['種目'], row['種目']), axis=1)
         return df
     else:
         return df
@@ -1640,8 +1775,8 @@ def process_sheet(
     
     df_2=get_grade_column(df)  # 学年列を抽出
     
-    df_3 = reorder_columns_by_priority(df_2)  # 優先カ
-    df_4 = get_true_record(df_3)  # 記録列から数値部分を抽出,風速を抽出
+    #df_3 = reorder_columns_by_priority(df_2)  # 優先カ
+    df_4 = get_true_record(df_2)  # 記録列から数値部分を抽出,風速を抽出
     
     df_5 = get_event_type(df_4)  # 種目列から競技種目を抽出
     
@@ -1655,13 +1790,14 @@ def process_sheet(
     df_10 = get_compare_record(df_9)  # 比較用の記録を抽出
     df_11 = get_univ_name(df_10, "大阪大")  # 大学名を抽出
     #df_12 = get_grade_column(df_11)
-    df_12=remove_duplicates_from_df(df_11)  # 重複行を削除
+    df_12=remove_duplicates_from_df_excluding_pb_sb_ub(df_11)  # 重複行を削除
     df_13 = add_pb_column(df_12)  # PB列を追加
     df_14 = add_sb_column(df_13)  # SB列を追加
     df_15 = add_ub_column(df_14)  # UB列を追加
     df_16 = add_gender_column(df_15)  # 性別列を追加
+    df_17 = reorder_columns_by_priority(df_16)  # 優先カ
     
-    df_sorted = df_16
+    df_sorted = df_17
     # ソート用のカラムを削除
     #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
 
@@ -1692,6 +1828,7 @@ def add_gender_column(df: pd.DataFrame) -> pd.DataFrame:
             else:
                 return ""
         
+        df = df.copy()
         df['gender'] = df['種別'].apply(extract_gender)
         return df
     else:
@@ -1760,6 +1897,7 @@ def add_ub_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     DataFrameからUB（University Best）を抽出して新しい列を追加する
     """
+    df = df.copy()
     df_ub = df
     event_list = df['event'].unique()
     df.loc[:, 'UB'] = ""
