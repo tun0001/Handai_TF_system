@@ -333,8 +333,9 @@ def merge_sheets(
     target_worksheet.update('A1', updated_data)
 
 def set_member_active(
-    spread_sheet_id: str,
+    spreadsheet_id: str,
     member_name: str,
+    cred_dict: dict | None = None,
     ):
     """
     スプレッドシートの部員一覧シートで指定されたメンバーのActiveカラムを"Active"に設定する
@@ -346,12 +347,12 @@ def set_member_active(
 
     creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, scope)
     client = gspread.authorize(creds)
-    sh = client.open_by_key(spread_sheet_id)
+    sh = client.open_by_key(spreadsheet_id)
 
     try:
         worksheet = sh.worksheet("部員一覧")
     except gspread.exceptions.WorksheetNotFound:
-        print(f"Worksheet '部員一覧' not found in spreadsheet '{spread_sheet_id}'.")
+        print(f"Worksheet '部員一覧' not found in spreadsheet '{spreadsheet_id}'.")
         return
 
     # シートの全データ取得
@@ -650,10 +651,23 @@ def member_sb_to_sheet(
     
     # メンバーシートを開く
     member_sheets = client.open_by_key(spreadsheet_id_member)
-    member_list = load_member_list()
+    member_list_active = load_member_list()
     df_sb = pd.DataFrame()
+    df_sb_pre = load_sheet(
+        spreadsheet_id=spreadsheet_id_sb,
+        sheet_name="member_sb_all",
+        creds_dict=creds_dict
+    )
+
+    member_list = load_sheet(
+        spreadsheet_id=spreadsheet_id_member,
+        sheet_name="部員一覧",
+        creds_dict=creds_dict
+    )[['member_name', 'Active']]
+    #member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
+    print(member_list_active)
     
-    for member in member_list:
+    for member in member_list_active:
         try:
             member_sheet = member_sheets.worksheet(member)
             print(f"Processing member: {member}")
@@ -751,6 +765,14 @@ def member_sb_to_sheet(
         data=df_year_records,
         cred_dict=creds_dict
     )
+    df_sb['index'] = df_sb['member_name'].str.replace('　', '', regex=False)
+    df_sb = reorder_by_event(df_sb)
+    overwrite_sheet(
+        spreadsheet_id=spreadsheet_id_sb,
+        sheet_name="member_sb_all",
+        data=df_sb,
+        cred_dict=creds_dict
+    )
     
     # 各種目毎のランキングシートを作成
     # 性別を'種別'カラムから取得
@@ -761,10 +783,19 @@ def member_sb_to_sheet(
         df_sb['gender'] = '不明'  # 種別カラムがない場合のフォールバック
     
     # 各種目・性別毎にランキングシートを作成
-    events = df_sb['event'].unique()
+    #events = df_sb['event'].unique()
     genders = df_sb['gender'].unique()
-    
-    for event in events:
+    event_list=[
+            "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
+            "5000mW", "10000mW", "20kW", "50kmW",
+            "110mH", "100mH", "300mH", "400mH", "3000mSC",
+            "4x100mR", "4x400mR", "4x200mR", "4x800mR",
+            "走高跳", "走幅跳", "三段跳", "棒高跳",
+            "砲丸投", "円盤投", "ハンマー投", "やり投",
+            "十種競技", "七種競技",
+            "ハーフマラソン", "フルマラソン"
+        ]
+    for event in event_list:
         for gender in genders:
             # 該当する種目・性別のデータを抽出
             event_gender_data = df_sb[(df_sb['event'] == event) & (df_sb['gender'] == gender)]
@@ -777,7 +808,7 @@ def member_sb_to_sheet(
             for _, row in event_gender_data.iterrows():
                 ranking_data.append({
                     '順位': '',  # 後で設定
-                    '氏名': row['member_name'],
+                    '氏名': row['index'],
                     '性別': row['gender'],
                     '記録': row['記録(公認)'],
                     '記録_比較': row['記録(比較)'],
@@ -864,11 +895,25 @@ def member_pb_to_sheet(
     client = gspread.authorize(creds)
     
     # メンバーシートを開く
-    member_sheets = client.open_by_key(spreadsheet_id_member)
-    member_list = load_member_list()
-    df_pb = pd.DataFrame()
+    # member_sheets = client.open_by_key(spreadsheet_id_member)
+    # member_list_active = load_member_list()
+    # member_list=member_list_active.copy()
+    df_pb_pre = load_sheet(
+        spreadsheet_id=spreadsheet_id_pb,
+        sheet_name="member_pb_all",
+        creds_dict=creds_dict
+    )
+    df_pb =pd.DataFrame()
+
+    member_list = load_sheet(
+        spreadsheet_id=spreadsheet_id_member,
+        sheet_name="部員一覧",
+        creds_dict=creds_dict
+    )[['member_name', 'Active']]
+    member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
+    print(member_list_active)
     
-    for member in member_list:
+    for member in member_list_active:
         try:
             member_sheet = member_sheets.worksheet(member)
             print(f"Processing member: {member}")
@@ -895,8 +940,17 @@ def member_pb_to_sheet(
                 print(f"Skipping member {member}: No event information found")
                 continue
         
-        event_list = df_member['event'].unique()
-        
+        #event_list = df_member['event'].unique()
+        event_list=[
+            "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
+            "5000mW", "10000mW", "20kW", "50kmW",
+            "110mH", "100mH", "300mH", "400mH", "3000mSC",
+            "4x100mR", "4x400mR", "4x200mR", "4x800mR",
+            "走高跳", "走幅跳", "三段跳", "棒高跳",
+            "砲丸投", "円盤投", "ハンマー投", "やり投",
+            "十種競技", "七種競技",
+            "ハーフマラソン", "フルマラソン"
+        ]
         # 同じeventにPBとPB_highがある場合、PB_highを削除する
         for event in event_list:
             event_mask = df_member['event'] == event
@@ -924,13 +978,22 @@ def member_pb_to_sheet(
     
     print(f"Found PB records for members: {df_pb['member_name'].unique()}")
     
+    
+
     # 性別を'種別'カラムから取得
     if '種別' in df_pb.columns:
         df_pb = add_gender_column(df_pb)
     else:
         df_pb['gender'] = '不明'  # 種別カラムがない場合のフォールバック
     # 全角スペースを削除
+    # member_list_activeに含まれるmemberをdf_pb_preから削除
+    if not df_pb_pre.empty and 'member_name' in df_pb_pre.columns:
+        df_pb_pre = df_pb_pre[~df_pb_pre['member_name'].isin(member_list_active)]
+
+    # 削除したdf_pb_preとdf_pbを結合させて最新のdf_pbにする
+    df_pb = pd.concat([df_pb_pre, df_pb], ignore_index=True)
     
+
     # Create a pivot table style dataframe with one row per member and gender as the second column
     pivot_records = pd.DataFrame({
         'member_name': df_pb['member_name'].unique()
@@ -949,8 +1012,8 @@ def member_pb_to_sheet(
             event_data = member_data[member_data['event'] == event]
             
             # Get rows with PB
-            pb_row = event_data[event_data['PB'] == 'PB']
-            
+            pb_row = event_data[(event_data['PB'] == 'PB') | (event_data['PB'] == 'PB_high')]
+
             # Add PB record with combined format for wind and year
             if not pb_row.empty:
                 record_pb = pb_row.iloc[0]['記録(公認)']
@@ -965,6 +1028,10 @@ def member_pb_to_sheet(
 
     # Use pivot_records as the final data
     df_pb_records = pivot_records
+    # Insert the Active column as the 3rd column (index 2)
+    active_column = pd.Series("Non-Active", index=df_pb_records.index, name="Active")
+    df_pb_records.insert(2, "Active", active_column)
+    
     
     sheet_name = "member_pb"
 
@@ -974,8 +1041,14 @@ def member_pb_to_sheet(
         data=df_pb_records,
         cred_dict=creds_dict
     )
+    overwrite_sheet(
+        spreadsheet_id=spreadsheet_id_member,
+        sheet_name="部員一覧",
+        data=df_pb_records,
+        cred_dict=creds_dict
+    )
     df_pb_all= df_pb.copy()
-    df_pb_all['member_name'] = df_pb_all['member_name'].str.replace('　', '', regex=False)
+    df_pb_all['index'] = df_pb_all['member_name'].str.replace('　', '', regex=False)
     df_pb_all = reorder_by_event(df_pb_all)
     overwrite_sheet(
         spreadsheet_id=spreadsheet_id_pb,
@@ -1244,7 +1317,7 @@ def reorder_columns_by_priority(df: pd.DataFrame) -> pd.DataFrame:
         """
         優先カラムリストに従ってDataFrameのカラム順を並べ替える
         """
-        priority_columns = ['日付','氏名','学年','チーム／メンバー','チーム／メンバー_2','チーム／メンバー_3', '所属', 'event','記録','風(公認)','PB','UB','SB', '大会', 'ラウンド', 'レーン','組',  'コメント']
+        priority_columns = ['日付','氏名','学年','チーム／メンバー','チーム／メンバー_2','チーム／メンバー_3', '所属', 'event','記録(公認)','風(公認)','PB','UB','SB', '大会', 'ラウンド', 'レーン','組',  'コメント']
         columns = df.columns.tolist()
         ordered_priority = [col for col in priority_columns if col in columns]
         remaining = [col for col in columns if col not in ordered_priority]
