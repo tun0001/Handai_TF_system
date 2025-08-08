@@ -190,14 +190,15 @@ def get_event_results(session, gid, event_name, event_code):
     
     # 複数のラウンドを試行するためのパターン
     round_patterns = [
-        "@ALL",      # 全結果
-        "@1@1",      # 決勝
-        "@2",        # 準決勝（総合結果）
-        "@2@1",      # 準決勝1〜3組
-        "@5",        # 予選（総合結果）
+        "@5@11",     # 予選11〜11組
         "@5@1",      # 予選1〜10組
-        "@5@11"      # 予選11〜11組
+        "@5",        # 予選（総合結果）
+        "@2@1",      # 準決勝1〜3組
+        "@2",        # 準決勝（総合結果）
+        "@1@1",      # 決勝
+        "@ALL"       # 全結果
     ]
+    
     
     all_results = []
     
@@ -226,7 +227,7 @@ def get_event_results(session, gid, event_name, event_code):
             response = session.post(api_url, data=data, headers=headers, timeout=30)
             response.raise_for_status()
             response.encoding = response.apparent_encoding
-            print(response.encoding)
+            #print(response.encoding)
             forbit_code_list={
                 "iso8859_13",
                 "CP949",
@@ -238,12 +239,14 @@ def get_event_results(session, gid, event_name, event_code):
 
             if response.encoding in forbit_code_list:
                 response.encoding = "euc_jis_2004"
-            
+                #response.encoding = "euc-jp"
+
             if len(response.text) < 1000:
                 continue
                 
             soup = BeautifulSoup(response.text, 'html.parser')
             tables = soup.find_all('table')
+            #print(soup)
             
             if len(tables) < 2:
                 continue
@@ -281,7 +284,7 @@ def get_event_results(session, gid, event_name, event_code):
         if key not in seen:
             seen.add(key)
             unique_results.append(result)
-    print(unique_results)
+    #print(unique_results)
     return unique_results if unique_results else None
 
 def parse_results_from_table(rows, event_name, pattern):

@@ -46,7 +46,7 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
     #     return
     df_results = scrape_athlete_ranking(url, univ=univ)
     print(df_results)
-    df_results = df_results[100:]
+    #df_results = df_results[100:]
     #df_results = df_results[df_results['種目']=="女子対校走幅跳"]
     conference_name=df_results['大会'].iloc[1]
 
@@ -234,6 +234,24 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
         #     sheet_name=name,
         #     creds_dict=creds_dict
         # )
+        time.sleep(1.5)  # API制限対策のため1秒待機
+        df_all=load_sheet(
+            spreadsheet_id=spread_sheet_ID_member,
+            sheet_name=name,
+            creds_dict=creds_dict
+        )
+        df_send = return_record_status(df_all,df_result,univ)
+        df_send['氏名']=name
+        print(df_send)
+        time.sleep(2)  # API制限対策のため1秒待機
+        write_to_new_sheet(
+            spreadsheet_id=spread_sheet_ID_conference,
+            sheet_name=conference_name,
+            data=df_send.to_dict(),
+            cred_dict=creds_dict
+        )
+
+
         if announce_discord:    
             if not df_result.empty:
                 # content: 各列名:値 形式で整形

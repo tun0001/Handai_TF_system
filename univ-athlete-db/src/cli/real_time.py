@@ -216,11 +216,11 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                         if not df_result.empty:
                             # content: 各列名:値 形式で整形
                             #------
-                            process_sheet( 
-                                spreadsheet_id=spread_sheet_ID_member,
-                                sheet_name=name,
-                                creds_dict=creds_dict
-                            )
+                            # process_sheet( 
+                            #     spreadsheet_id=spread_sheet_ID_member,
+                            #     sheet_name=name,
+                            #     creds_dict=creds_dict
+                            # )
                             df_all=load_sheet(
                                 spreadsheet_id=spread_sheet_ID_member,
                                 sheet_name=name,

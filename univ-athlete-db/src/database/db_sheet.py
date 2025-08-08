@@ -1286,6 +1286,26 @@ def remove_duplicates_from_df_excluding_pb_sb_ub(df: pd.DataFrame) -> pd.DataFra
 def remove_duplicates_from_df(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates()
 
+def clear_dataframe_format(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    入力されたDataFrameの書式をクリアして返す関数
+    セル内の値を文字列として統一し、NaN値を空文字に変換する
+    """
+    df_cleared = df.copy()
+    
+    # NaN値を空文字に変換
+    df_cleared = df_cleared.fillna("")
+    
+    # 全ての値を文字列に変換（数値や日付などの書式をクリア）
+    for col in df_cleared.columns:
+        df_cleared[col] = df_cleared[col].astype(str)
+    
+    # "nan"文字列を空文字に変換（fillna後に文字列変換した場合の対応）
+    df_cleared = df_cleared.replace("nan", "")
+    
+    return df_cleared
+
+
 def reorder_by_event(df: pd.DataFrame) -> pd.DataFrame:
     """
     'event'列の値に基づいてDataFrameを並べ替える
@@ -1458,7 +1478,7 @@ def get_grade_column(df: pd.DataFrame) -> pd.DataFrame:
     else:
         return df
 
-def get_univ_name(df: pd.DataFrame,univ_name) -> pd.DataFrame:
+def get_univ_name(df: pd.DataFrame, univ_name: str) -> pd.DataFrame:
     """
     '所属'列から大学名を抽出してDataFrameを返す
     """
@@ -1781,9 +1801,125 @@ def change_column_names(df: pd.DataFrame) -> pd.DataFrame:
     df["競技"]=df["種目"]
     return df
 
+def return_record_status(df_all: pd.DataFrame,df_record: pd.Series,univ_name: str) -> pd.DataFrame:
+    # df_allの0番目からdf_recordと一致する要素までの配列をdf_all_by_recordと定義
+    # df_recordをDataFrame型に変換
+    if isinstance(df_record, pd.Series):
+        df_record = df_record.to_frame().T
+    elif not isinstance(df_record, pd.DataFrame):
+        # その他の型の場合、空のDataFrameを作成
+        df_record = pd.DataFrame()
+    df_record=process_df(df_record,univ_name)
+    if not df_all.empty and not df_record.empty:
+        # df_recordの最初の行と一致する行をdf_allから探す
+        match_found = False
+        match_index = 0
+        
+        for i, row in df_all.iterrows():
+            # 主要なカラムで一致を確認（例：氏名、日付、記録など）
+            match_cols = ['氏名', '大会', '記録(公認)', 'event','ラウンド'] if all(col in df_all.columns and col in df_record.columns for col in ['氏名', '日付', '記録(公認)', 'event']) else df_all.columns.intersection(df_record.columns)
+            
+            if len(match_cols) > 0 and not df_record.empty:
+                # df_recordの最初の行と比較
+                is_match = True
+                for col in match_cols:
+                    if str(row[col]) != str(df_record.iloc[0][col]):
+                        is_match = False
+                        break
+                
+                if is_match:
+                    match_index = i
+                    match_found = True
+                    break
+        
+        if match_found:
+            # 0番目からマッチした要素までの配列を取得
+            df_all_by_record = df_all.iloc[0:match_index+1].copy()
+        else:
+            # マッチしない場合は空のDataFrameを返す
+            df_all_by_record = pd.DataFrame()
+    else:
+        df_all_by_record = pd.DataFrame()
+    
+    df_all_by_record = process_df(df_all_by_record,univ_name)
+    df_all_by_record = change_to_send_format(df_all_by_record)
+
+    if not df_all_by_record.empty:
+        df_record = df_all_by_record.iloc[-1]
+    else:
+        df_record = pd.Series()
+    
+    #df_record=change_to_send_format(df_record)
+
+
+    return df_record
+
+def change_to_send_format(df: pd.DataFrame) -> pd.DataFrame:
+    # 送信フォーマットに変換する処理を実装
+    df_send = df.copy()
+    # 必要なカラムだけを残す
+    # PB, UB, SB カラムに要素が入っていれば、備考カラムにそのカラム名を入れる
+    if '備考' not in df_send.columns:
+        df_send['備考'] = ""
+
+    for col in ['PB', 'UB', 'SB']:
+        if col in df_send.columns:
+            # PBまたはUBに値がある行を特定
+            has_pb_or_ub = ((df_send['PB'].notna()) & (df_send['PB'] != "")) | \
+                          ((df_send['UB'].notna()) & (df_send['UB'] != ""))
+            
+            # SBの場合、PBまたはUBがある行は除外
+            if col == 'SB':
+                mask = (df_send[col].notna()) & (df_send[col] != "") & (~has_pb_or_ub)
+            else:
+                mask = (df_send[col].notna()) & (df_send[col] != "")
+            
+            # 既存の備考にカラム名を追加（既に備考がある場合はスペースで区切る）
+            df_send.loc[mask, '備考'] = df_send.loc[mask, '備考'].astype(str).apply(
+                lambda x: x + " " + col if x and x != "nan" else col
+            )
+    # 送信に必要なカラムのみを選択
+    df_send = df_send[['種目','ラウンド','氏名', '学年','gender' ,'記録','風','順位','備考']]
+    return df_send
+
+def process_df(df: pd.DataFrame, univ_name: str) -> pd.DataFrame:
+
+    if '記録(公式)' in df.columns:
+        # Only update records where 記録(公式) has a value (is not empty)
+        mask = (df['記録(公式)'].notna()) & (df['記録(公式)'] != "")
+        df.loc[mask, "記録"] = df.loc[mask, "記録(公式)"]
+
+    
+    
+    df=get_grade_column(df)  # 学年列を抽出
+    
+    #df_3 = reorder_columns_by_priority(df_2)  # 優先カ
+    df = get_true_record(df)  # 記録列から数値部分を抽出,風速を抽出
+    
+    df = get_event_type(df)  # 種目列から競技種目を抽出
+    
+    df = sort_dataframe_by_date(df)  # 日付でソート
+    
+    df = get_season(df)  # シーズンを抽出
+    
+    df = get_event_name(df)  # 種目名を抽出
+    
+    df = get_official_record(df)  # 公認記録を抽出
+    df = get_compare_record(df)  # 比較用の記録を抽出
+    df = get_univ_name(df,univ_name)  # 大学名を抽出
+    #df_12 = get_grade_column(df_11)
+    df=remove_duplicates_from_df_excluding_pb_sb_ub(df)  # 重複行を削除
+    df = add_pb_column(df)  # PB列を追加
+    df = add_sb_column(df)  # SB列を追加
+    df = add_ub_column(df)  # UB列を追加
+    df = add_gender_column(df)  # 性別列を追加
+    df = reorder_columns_by_priority(df)  # 優先カ
+    return df
+
 def process_sheet(
     spreadsheet_id: str,
     sheet_name: str,
+    univ_name: str = "大阪大",
     creds_dict: dict | None = None,
 ):
     """
@@ -1814,65 +1950,7 @@ def process_sheet(
    
     # ヘッダーを除いたデータ部分をDataFrameに変換
     df = pd.DataFrame(data[1:], columns=data[0])
-    #-----------
-    # 特定の大会に関連するレコードで記録が空の行を削除
-    # conference_names = [
-    #     "2024関西学生陸上競技種目別選手権大会",
-    #     "2023関西学生陸上競技種目別選手権大会"
-    # ]
-    
-    # # Check if '大会' and '記録' columns exist in the dataframe
-    # if '大会' in df.columns and '記録' in df.columns:
-    #     # Create mask for rows where 大会 is in conference_names AND 記録 is empty
-    #     # Check if any conference name is contained within each 大会 value (partial match)
-    #     mask = df['大会'].apply(lambda x: any(conf in x for conf in conference_names)) & ((df['記録'].isna()) | (df['記録'] == ""))
-        
-    #     # Count rows that will be removed
-    #     rows_to_remove = mask.sum()
-    #     if rows_to_remove > 0:
-    #         print(f"Removing {rows_to_remove} rows with empty records from specified competitions")
-            
-    #     # Keep rows that don't match the condition (inverse of mask)
-    #     df = df[~mask]
-
-
-    #-----------
-
-
-    if '記録(公式)' in df.columns:
-        # Only update records where 記録(公式) has a value (is not empty)
-        mask = (df['記録(公式)'].notna()) & (df['記録(公式)'] != "")
-        df.loc[mask, "記録"] = df.loc[mask, "記録(公式)"]
-
-    
-    
-    df_2=get_grade_column(df)  # 学年列を抽出
-    
-    #df_3 = reorder_columns_by_priority(df_2)  # 優先カ
-    df_4 = get_true_record(df_2)  # 記録列から数値部分を抽出,風速を抽出
-    
-    df_5 = get_event_type(df_4)  # 種目列から競技種目を抽出
-    
-    df_6 = sort_dataframe_by_date(df_5)  # 日付でソート
-    
-    df_7 = get_season(df_6)  # シーズンを抽出
-    
-    df_8 = get_event_name(df_7)  # 種目名を抽出
-    
-    df_9 = get_official_record(df_8)  # 公認記録を抽出
-    df_10 = get_compare_record(df_9)  # 比較用の記録を抽出
-    df_11 = get_univ_name(df_10, "大阪大")  # 大学名を抽出
-    #df_12 = get_grade_column(df_11)
-    df_12=remove_duplicates_from_df_excluding_pb_sb_ub(df_11)  # 重複行を削除
-    df_13 = add_pb_column(df_12)  # PB列を追加
-    df_14 = add_sb_column(df_13)  # SB列を追加
-    df_15 = add_ub_column(df_14)  # UB列を追加
-    df_16 = add_gender_column(df_15)  # 性別列を追加
-    df_17 = reorder_columns_by_priority(df_16)  # 優先カ
-    
-    df_sorted = df_17
-    # ソート用のカラムを削除
-    #df_sorted = df_sorted.drop(columns=['年', '月', '日'])
+    df_sorted = process_df(df,univ_name)  # DataFrameを処理してソート
 
     # NaNを空文字に変換
     df_sorted = df_sorted.where(pd.notnull(df_sorted), "")
