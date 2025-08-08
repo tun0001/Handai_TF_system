@@ -765,7 +765,7 @@ def member_sb_to_sheet(
         data=df_year_records,
         cred_dict=creds_dict
     )
-    df_sb['index'] = df_sb['member_name'].str.replace('　', '', regex=False)
+    df_sb['post_title'] = df_sb['member_name'].str.replace('　', '', regex=False)
     df_sb = reorder_by_event(df_sb)
     overwrite_sheet(
         spreadsheet_id=spreadsheet_id_sb,
@@ -1048,7 +1048,7 @@ def member_pb_to_sheet(
         cred_dict=creds_dict
     )
     df_pb_all= df_pb.copy()
-    df_pb_all['index'] = df_pb_all['member_name'].str.replace('　', '', regex=False)
+    df_pb_all['post_title'] = df_pb_all['member_name'].str.replace('　', '', regex=False)
     df_pb_all = reorder_by_event(df_pb_all)
     overwrite_sheet(
         spreadsheet_id=spreadsheet_id_pb,
