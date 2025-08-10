@@ -109,15 +109,15 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
             cleaned_results = df_results.replace([float('inf'), float('-inf')], pd.NA)
             values=[cleaned_results.columns.tolist()] + cleaned_results.fillna('').values.tolist()
             #print(cleaned_results)
-            #print(len(cleaned_results))
-            write_to_new_sheet(
-                spreadsheet_id=spread_sheet_ID_conference,
-                sheet_name=conference_name,
-                data=values,
-                cred_dict=creds_dict,
-                num_rows=len(cleaned_results)+1,  # データがある場合のみシートを作成
-                num_cols=len(cleaned_results.columns)+1  # 列数も指定
-            )
+            # #print(len(cleaned_results))
+            # write_to_new_sheet(
+            #     spreadsheet_id=spread_sheet_ID_conference,
+            #     sheet_name=conference_name,
+            #     data=values,
+            #     cred_dict=creds_dict,
+            #     num_rows=len(cleaned_results)+1,  # データがある場合のみシートを作成
+            #     num_cols=len(cleaned_results.columns)+1  # 列数も指定
+            # )
             #print("ℹ️ すべての種目が完了しています。")
         return
     
@@ -194,24 +194,30 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                     print(f"選手名: {name}, 種目: {row['種目']}")
                     #print(name)
                     time.sleep(1)  # API制限対策のため1秒待機
-                    write_to_new_sheet(
+                    time.sleep(1)  # API制限対策のため1秒待機
+                    print(df_result)
+                    write_member_record_to_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
                         sheet_name=name,
                         data=df_result.iloc[idx].to_dict(),
                         cred_dict=creds_dict
                     )
-                    #--------
-                    time.sleep(1)  # API制限対策のため1秒待機
-                    process_sheet( 
+                    time.sleep(1.5)  # API制限対策のため1秒待機
+                    df_all=load_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
                         sheet_name=name,
                         creds_dict=creds_dict
                     )
-                    # delete_sheet(
-                    #     spreadsheet_id=spread_sheet_ID_conference,
-                    #     sheet_name=name,
-                    #     cred_dict=creds_dict
-                    # )
+                    df_result_send = return_record_status(df_all,df_result.iloc[idx],univ)
+                    df_result_send['氏名']=name
+                    print(df_result_send)
+                    time.sleep(2)  # API制限対策のため1秒待機
+                    write_to_new_sheet(
+                        spreadsheet_id=spread_sheet_ID_conference,
+                        sheet_name=conference_name,
+                        data=df_result_send.to_dict(),
+                        cred_dict=creds_dict
+                    )
                     if announce_discord:    
                         if not df_result.empty:
                             # content: 各列名:値 形式で整形
@@ -221,24 +227,26 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                             #     sheet_name=name,
                             #     creds_dict=creds_dict
                             # )
-                            df_all=load_sheet(
-                                spreadsheet_id=spread_sheet_ID_member,
-                                sheet_name=name,
-                                creds_dict=creds_dict
-                            )
-                            df_result_send = df_all[df_all['大会'] == conference_name]
-                            if not df_result_send.empty:
-                                df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
-                            else:
-                                df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
-                            print(df_result_send)
-                            # Remove columns that contain only NaN values or empty strings
-                            df_result_send = df_result_send.dropna(axis=1, how='all')
-                            df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
-                            print(df_result_send)
+                            # df_all=load_sheet(
+                            #     spreadsheet_id=spread_sheet_ID_member,
+                            #     sheet_name=name,
+                            #     creds_dict=creds_dict
+                            # )
+                            # df_result_send = df_all[df_all['大会'] == conference_name]
+                            # if not df_result_send.empty:
+                            #     df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
+                            # else:
+                            #     df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
+                            # print(df_result_send)
+                            # # Remove columns that contain only NaN values or empty strings
+                            # df_result_send = df_result_send.dropna(axis=1, how='all')
+                            # df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
+                            # print(df_result_send)
 
                             #------
                             lines = []
+                            if isinstance(df_result_send, pd.Series):
+                                df_result_send = df_result_send.to_frame().T
                             for _, row in df_result_send.iterrows():
                                 for col in df_result_send.columns:
                                     lines.append(f"{col}: {row[col]}")

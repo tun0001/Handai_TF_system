@@ -48,7 +48,7 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
     print(df_results)
     #df_results = df_results[100:]
     #df_results = df_results[df_results['種目']=="女子対校走幅跳"]
-    conference_name=df_results['大会'].iloc[1]
+    conference_name=df_results['大会'].iloc[0]
 
     #add_conference_list(conference_name)
     #events_name= parse_each_event_name_kaisizikoku(html)
@@ -217,68 +217,38 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
         #add_member_list(name)
         #add_event_list()
         print(f"選手名: {name}, 種目: {event_name}, 種別: {event_type}")
-        #print(df_result)
-        #print(name)
-        # time.sleep(1)  # API制限対策のため1秒待機
-        # # write_to_new_sheet(
-        #     spreadsheet_id=spread_sheet_ID_member,
-        #     sheet_name=name,
-        #     data=df_result.to_dict(),
-        #     cred_dict=creds_dict
-        # )
-        
-        # # #--------
-        # time.sleep(2)  # API制限対策のため1秒待機
-        # process_sheet( 
-        #     spreadsheet_id=spread_sheet_ID_member,
-        #     sheet_name=name,
-        #     creds_dict=creds_dict
-        # )
+        print(df_result)
+        print(name)
+        time.sleep(1)  # API制限対策のため1秒待機
+        write_member_record_to_sheet(
+            spreadsheet_id=spread_sheet_ID_member,
+            sheet_name=name,
+            data=df_result.to_dict(),
+            cred_dict=creds_dict
+        )
         time.sleep(1.5)  # API制限対策のため1秒待機
         df_all=load_sheet(
             spreadsheet_id=spread_sheet_ID_member,
             sheet_name=name,
             creds_dict=creds_dict
         )
-        df_send = return_record_status(df_all,df_result,univ)
-        df_send['氏名']=name
-        print(df_send)
+        df_result_send = return_record_status(df_all,df_result,univ)
+        df_result_send['氏名']=name
+        print(df_result_send)
         time.sleep(2)  # API制限対策のため1秒待機
-        write_to_new_sheet(
-            spreadsheet_id=spread_sheet_ID_conference,
-            sheet_name=conference_name,
-            data=df_send.to_dict(),
-            cred_dict=creds_dict
-        )
+        # write_to_new_sheet(
+        #     spreadsheet_id=spread_sheet_ID_conference,
+        #     sheet_name=conference_name,
+        #     data=df_result_send.to_dict(),
+        #     cred_dict=creds_dict
+        # )
 
 
         if announce_discord:    
             if not df_result.empty:
-                # content: 各列名:値 形式で整形
-                #------
-                process_sheet( 
-                    spreadsheet_id=spread_sheet_ID_member,
-                    sheet_name=name,
-                    creds_dict=creds_dict
-                )
-                df_all=load_sheet(
-                    spreadsheet_id=spread_sheet_ID_member,
-                    sheet_name=name,
-                    creds_dict=creds_dict
-                )
-                df_result_send = df_all[df_all['大会'] == conference_name]
-                if not df_result_send.empty:
-                    df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
-                else:
-                    df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
-                print(df_result_send)
-                # Remove columns that contain only NaN values or empty strings
-                df_result_send = df_result_send.dropna(axis=1, how='all')
-                df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
-                print(df_result_send)
-
-                #------
                 lines = []
+                if isinstance(df_result_send, pd.Series):
+                    df_result_send = df_result_send.to_frame().T
                 for _, row in df_result_send.iterrows():
                     for col in df_result_send.columns:
                         lines.append(f"{col}: {row[col]}")

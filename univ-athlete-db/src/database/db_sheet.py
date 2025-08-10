@@ -407,10 +407,12 @@ def write_member_record_to_sheet(
     ):
     #-------------
     #部員一覧のsheet_nameをアクティブにする
-    
-    
-
-
+    set_member_active(
+        spreadsheet_id=spreadsheet_id,
+        member_name=sheet_name,
+        cred_dict=cred_dict
+    )
+    time.sleep(1)
 
     #----------------
     write_to_new_sheet(
@@ -418,6 +420,13 @@ def write_member_record_to_sheet(
         sheet_name=sheet_name,
         data=data,
         cred_dict=cred_dict
+    )
+    time.sleep(1)
+
+    process_sheet(
+        spreadsheet_id=spreadsheet_id,
+        sheet_name=sheet_name,
+        creds_dict=cred_dict
     )
 
 
@@ -781,7 +790,13 @@ def member_sb_to_sheet(
         #df_sb['gender'] = df_sb['種別'].apply(extract_gender)
     else:
         df_sb['gender'] = '不明'  # 種別カラムがない場合のフォールバック
-    
+    # member_list_activeに含まれるmemberをdf_sb_preから削除
+    if not df_sb_pre.empty and 'member_name' in df_sb_pre.columns:
+        df_sb_pre = df_sb_pre[~df_sb_pre['member_name'].isin(member_list_active)]
+
+    # 削除したdf_pb_preとdf_pbを結合させて最新のdf_pbにする
+    df_sb = pd.concat([df_sb, df_sb_pre], ignore_index=True)
+
     # 各種目・性別毎にランキングシートを作成
     #events = df_sb['event'].unique()
     genders = df_sb['gender'].unique()
@@ -808,7 +823,7 @@ def member_sb_to_sheet(
             for _, row in event_gender_data.iterrows():
                 ranking_data.append({
                     '順位': '',  # 後で設定
-                    '氏名': row['index'],
+                    '氏名': row['post_title'],
                     '性別': row['gender'],
                     '記録': row['記録(公認)'],
                     '記録_比較': row['記録(比較)'],
@@ -895,7 +910,7 @@ def member_pb_to_sheet(
     client = gspread.authorize(creds)
     
     # メンバーシートを開く
-    # member_sheets = client.open_by_key(spreadsheet_id_member)
+    member_sheets = client.open_by_key(spreadsheet_id_member)
     # member_list_active = load_member_list()
     # member_list=member_list_active.copy()
     df_pb_pre = load_sheet(
@@ -991,7 +1006,7 @@ def member_pb_to_sheet(
         df_pb_pre = df_pb_pre[~df_pb_pre['member_name'].isin(member_list_active)]
 
     # 削除したdf_pb_preとdf_pbを結合させて最新のdf_pbにする
-    df_pb = pd.concat([df_pb_pre, df_pb], ignore_index=True)
+    df_pb = pd.concat([df_pb, df_pb_pre], ignore_index=True)
     
 
     # Create a pivot table style dataframe with one row per member and gender as the second column
@@ -1008,7 +1023,7 @@ def member_pb_to_sheet(
         member_data = df_pb[df_pb['member_name'] == member]
         print(f"Processing member: {member} for PB records")
         
-        for event in member_data['event'].unique():
+        for event in event_list:
             event_data = member_data[member_data['event'] == event]
             
             # Get rows with PB
@@ -1817,30 +1832,39 @@ def return_record_status(df_all: pd.DataFrame,df_record: pd.Series,univ_name: st
         
         for i, row in df_all.iterrows():
             # 主要なカラムで一致を確認（例：氏名、日付、記録など）
-            match_cols = ['氏名', '大会', '記録(公認)', 'event','ラウンド'] if all(col in df_all.columns and col in df_record.columns for col in ['氏名', '日付', '記録(公認)', 'event']) else df_all.columns.intersection(df_record.columns)
+            match_cols = ['大会','event','ラウンド'] if all(col in df_all.columns and col in df_record.columns for col in ['大会', '記録(公認)', 'event','ラウンド']) else df_all.columns.intersection(df_record.columns)
             
+
             if len(match_cols) > 0 and not df_record.empty:
                 # df_recordの最初の行と比較
                 is_match = True
                 for col in match_cols:
+                    # print(row[col], df_record.iloc[0][col])
+                    # print(row)
+                    # if row[col]==None:
+                    print(df_all.iloc[i])
+                    print("-----how-----")
                     if str(row[col]) != str(df_record.iloc[0][col]):
+                        #print(row[col], df_record.iloc[0][col])
                         is_match = False
                         break
                 
                 if is_match:
                     match_index = i
+                    print("match")
                     match_found = True
                     break
-        
+        #print(match_cols)
         if match_found:
-            # 0番目からマッチした要素までの配列を取得
+            # 最初のデータからマッチした要素までの配列を取得
             df_all_by_record = df_all.iloc[0:match_index+1].copy()
         else:
-            # マッチしない場合は空のDataFrameを返す
-            df_all_by_record = pd.DataFrame()
+            # マッチしない場合は最初のデータからdf_recordまでのすべてのデータを返す
+            df_all_by_record = df_all.copy()
     else:
         df_all_by_record = pd.DataFrame()
-    
+    #print(df_record)
+    #print(df_all_by_record)
     df_all_by_record = process_df(df_all_by_record,univ_name)
     df_all_by_record = change_to_send_format(df_all_by_record)
 
@@ -1879,7 +1903,7 @@ def change_to_send_format(df: pd.DataFrame) -> pd.DataFrame:
                 lambda x: x + " " + col if x and x != "nan" else col
             )
     # 送信に必要なカラムのみを選択
-    df_send = df_send[['種目','ラウンド','氏名', '学年','gender' ,'記録','風','順位','備考']]
+    df_send = df_send[['種目','ラウンド','ﾚｰﾝ','氏名', '学年','gender' ,'記録','風','順位','備考','ｺﾒﾝﾄ']]
     return df_send
 
 def process_df(df: pd.DataFrame, univ_name: str) -> pd.DataFrame:

@@ -190,8 +190,11 @@ def get_event_results(session, gid, event_name, event_code):
     
     # 複数のラウンドを試行するためのパターン
     round_patterns = [
-        "@5@11",     # 予選11〜11組
-        "@5@1",      # 予選1〜10組
+        "@5@1",     # 予選11〜11組
+        "@5@11",      # 予選1〜10組
+        "@5@21",
+        "@5@31",
+        "@5@41",
         "@5",        # 予選（総合結果）
         "@2@1",      # 準決勝1〜3組
         "@2",        # 準決勝（総合結果）
@@ -284,7 +287,7 @@ def get_event_results(session, gid, event_name, event_code):
         if key not in seen:
             seen.add(key)
             unique_results.append(result)
-    #print(unique_results)
+    print(unique_results)
     return unique_results if unique_results else None
 
 def parse_results_from_table(rows, event_name, pattern):
@@ -343,8 +346,8 @@ def parse_results_from_table(rows, event_name, pattern):
             try:
                 rank_text = cells[0].get_text().strip()
                 # 順位が数字でない場合（DNS、DNF等）をスキップ
-                if not rank_text.replace('.', '').isdigit():
-                    continue
+                # if not rank_text.replace('.', '').isdigit():
+                #     continue
                     
                 rank = int(float(rank_text)) if rank_text.replace('.', '').isdigit() else rank_text
                 
