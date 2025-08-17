@@ -53,7 +53,7 @@ def run_form_change(spread_sheet_ID_member, spread_sheet_ID_form, creds_dict):
     # 例: メンバーシートからデータを取得してフォームシートに書き込む
     #print(df_results)
     for index, df_result in df_results.iterrows():
-        df_result['競技']=df_result['性別']+ df_result['種目']
+        df_result['競技']=df_result['種別']+ df_result['種目']
         event_name = df_result['種目']
 
         if '種' in event_name:
@@ -91,19 +91,12 @@ def run_form_change(spread_sheet_ID_member, spread_sheet_ID_form, creds_dict):
         #print(df_result)
         time.sleep(1)  # API制限対策のため1秒待機
         #print(df_result['完了'])
-        if df_result['完了']!="ok":
-            write_to_new_sheet(
-                spreadsheet_id=spread_sheet_ID_member,
-                sheet_name=name,
-                data=df_result.to_dict(),  # Seriesを辞書に変換
-                cred_dict=creds_dict
-            )
-            time.sleep(1)  # API制限対策のため1秒待機
-            process_sheet( 
-                spreadsheet_id=spread_sheet_ID_member,
-                sheet_name=name,
-                creds_dict=creds_dict
-            )
+        write_member_record_to_sheet(
+            spreadsheet_id=spread_sheet_ID_member,
+            sheet_name=name,
+            data=df_result.to_dict(),  # Seriesを辞書に変換
+            cred_dict=creds_dict
+        )
         time.sleep(1)  # API制限対策のため1秒待機
         write_to_new_sheet( 
             spreadsheet_id=spread_sheet_ID_form,

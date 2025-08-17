@@ -91,10 +91,38 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
     #----------------------------------------------------
     now_result=parse_each_event_name_kaisizikoku(html)
     df_now_result = pd.DataFrame(now_result)
-    df_status['状況']=df_now_result['状況']
-    #df_status['type']=df_now_result['type']
+    # df_now_resultから"状況"列を除いたデータフレームを作成
+    df_now_result_without_status = df_now_result.drop(columns=['状況'], errors='ignore')
+
+    # df_statusから"状況"と"status"列を除いたデータフレームを作成
+    df_status_without_status = df_status.drop(columns=['状況', 'status'], errors='ignore')
+
+    # df_now_resultとdf_statusをマージして、statusを取得
+    df_merged = df_now_result_without_status.merge(
+        df_status[['種目', '種別', 'レース区分', 'status']], 
+        on=['種目', '種別', 'レース区分'], 
+        how='left'
+    )
+
+    # マージで見つからなかった行（NaN）のstatusを"未完了"に設定
+    df_merged['status'] = df_merged['status'].fillna('未完了')
+
+    # df_now_resultにstatusを追加
+    df_now_result = df_now_result.merge(
+        df_merged[['種目', '種別', 'レース区分', 'status']], 
+        on=['種目', '種別', 'レース区分'], 
+        how='left'
+    )
+    df_now_result['status'] = df_now_result['status'].fillna('未完了')
+    # print(df_now_result)
+    # print(df_status)
+    # df_status['状況']=df_now_result['状況']
+    # df_status['type']=df_now_result['type']
+    # df_status['url']=df_now_result['url']
+    #df_status=df_now_result
     #print(df_status[df_status['状況'] != "結果"])
     df_peding= df_status[df_status["status"] == "未完了"]
+    print(df_peding)
     #print(df_status)
     if df_peding.empty:
         time.sleep(1)  # API制限対策のため1秒待機
@@ -136,8 +164,10 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
             
             url=row['url']
             # for url in urls:
+            print(url)
             #種目のURLを取得
             #print("種目のURL:", url)
+            time.sleep(2)
             event_url = urljoin(base_url, url)
             #大学名で探索して，速報を取得．
             html_event= fetch_html(event_url)
@@ -161,33 +191,34 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                         df_result.at[idx, '種目'] = row['種目']
                     if '種別' in row:
                         df_result.at[idx, '種別'] = row['種別']
-                    
-                    if row['type'] == 'Relay':
-                        if '種別' in row:
-                            if '男' in str(row['種別']):
-                                name = "男子リレー"
-                            elif '女' in str(row['種別']):
-                                name = "女子リレー"
+                    print(row)
+                    if 'type' in row and row['type'] is not None:
+                        if row['type'] == 'Relay':
+                            if '種別' in row:
+                                if '男' in str(row['種別']):
+                                    name = "男子リレー"
+                                elif '女' in str(row['種別']):
+                                    name = "女子リレー"
+                                else:
+                                    name = "リレー"
+                                df_results.at[idx, '所属'] = univ
                             else:
                                 name = "リレー"
-                            df_results.at[idx, '所属'] = univ
                         else:
-                            name = "リレー"
-                    else:
-                        # 氏名から全角スペースを除いた文字列でmember_listから一致するものをnameとする
+                            # 氏名から全角スペースを除いた文字列でmember_listから一致するものをnameとする
 
-                        member_list = load_member_list()
-                        player_name = parse_player_name(str(df_result.iloc[idx]['氏名']))
-                        player_name = player_name.replace('　', '').replace(' ', '')
-                        name = None
-                        for member in member_list:
-                            #print(f"比較: {player_name} vs {member.replace('　', '').replace(' ', '')}")
-                            if player_name == member.replace('　', '').replace(' ', ''):
-                                
-                                name = member
-                                break
-                        if name is None:
-                            name = parse_player_name(str(df_result.iloc[idx]['氏名']))
+                            member_list = load_member_list()
+                            player_name = parse_player_name(str(df_result.iloc[idx]['氏名']))
+                            player_name = player_name.replace('　', '').replace(' ', '')
+                            name = None
+                            for member in member_list:
+                                #print(f"比較: {player_name} vs {member.replace('　', '').replace(' ', '')}")
+                                if player_name == member.replace('　', '').replace(' ', ''):
+                                    
+                                    name = member
+                                    break
+                            if name is None:
+                                name = parse_player_name(str(df_result.iloc[idx]['氏名']))
                         
                     add_member_list(name)
                     add_event_list(row['種目'])
@@ -196,6 +227,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                     time.sleep(1)  # API制限対策のため1秒待機
                     time.sleep(1)  # API制限対策のため1秒待機
                     print(df_result)
+                    print(df_result.iloc[idx])
                     write_member_record_to_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
                         sheet_name=name,
@@ -247,9 +279,9 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                             lines = []
                             if isinstance(df_result_send, pd.Series):
                                 df_result_send = df_result_send.to_frame().T
-                            for _, row in df_result_send.iterrows():
+                            for _, row2 in df_result_send.iterrows():
                                 for col in df_result_send.columns:
-                                    lines.append(f"{col}: {row[col]}")
+                                    lines.append(f"{col}: {row2[col]}")
                                 lines.append("")  # 行間を空ける
                             # コードブロックで囲んで Discord に送信
                             content = "```text\n" + "\n".join(lines) + "```"

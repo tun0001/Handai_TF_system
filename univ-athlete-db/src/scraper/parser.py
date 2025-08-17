@@ -612,6 +612,7 @@ def parse_each_event_name_kaisizikoku(html):
 
             # 種目タイプ判定
             event_name = row_dict.get('種目', '')
+            print(event_name)
             if '種' in event_name:
                 event_type = 'Mult'
             elif '跳' in event_name:
@@ -624,6 +625,7 @@ def parse_each_event_name_kaisizikoku(html):
                 event_type = 'Half'
             else:
                 event_type = 'Other'
+            print(event_type)
             row_dict['type'] = event_type
 
             # 各セルの<td>に含まれるhrefのhtmlを取得（種目セルに限らず）

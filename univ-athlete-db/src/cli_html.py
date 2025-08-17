@@ -19,7 +19,11 @@ if __name__ == "__main__":
         #"http://www.narariku.com/HTML/2024/kyouka/kokuspo/kyougi.html"
         "https://gold.jaic.org/kagawa/2025/2025kokusupo/kyougi.html",
         "http://www.narariku.com/HTML/2025/2025-kyouka-kokuspo/kyougi.html",
-        "https://gold.jaic.org/jaic/icaak/record/2025/25_DOSHISHAKYOTO/kyougi.html"
+        "https://gold.jaic.org/jaic/icaak/record/2025/25_DOSHISHAKYOTO/kyougi.html",
+        "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
+        "https://gold.jaic.org/tokushima/250811/kyougi.html",
+        "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
+        "http://npo-kochi.sports.coocan.jp/taikaikekka/23/07kokutaiU16/kyougi.html"
 
         }
     url= "https://www.ui-techno.jp/kanjitsu/game/r_23/kirokukai/kyougi.html"
@@ -30,7 +34,7 @@ if __name__ == "__main__":
     spread_sheet_ID_member=os.getenv("SPREAD_SHEET_ID_MEMBER")
     creds_dict=os.getenv("GOOGLE_ACOUNT_KEY_SHEET_TF")
     creds_dict = json.loads(creds_dict)
-    announce_discord = True
+    announce_discord = False
 
     # name_list={
     #     "柳瀬　宏志郎",

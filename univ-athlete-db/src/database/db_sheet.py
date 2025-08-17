@@ -732,6 +732,12 @@ def member_sb_to_sheet(
         df_sb = add_gender_column(df_sb)
     else:
         df_sb['gender'] = '不明'  # 種別カラムがない場合のフォールバック
+    # member_list_activeに含まれるmemberをdf_sb_preから削除
+    if not df_sb_pre.empty and 'member_name' in df_sb_pre.columns:
+        df_sb_pre = df_sb_pre[~df_sb_pre['member_name'].isin(member_list_active)]
+
+    # 削除したdf_sb_preとdf_sbを結合させて最新のdf_sbにする
+    df_sb = pd.concat([df_sb, df_sb_pre], ignore_index=True)
 
     # Create a pivot table style dataframe with one row per member and gender as the second column
     pivot_records = pd.DataFrame({
@@ -1842,8 +1848,8 @@ def return_record_status(df_all: pd.DataFrame,df_record: pd.Series,univ_name: st
                     # print(row[col], df_record.iloc[0][col])
                     # print(row)
                     # if row[col]==None:
-                    print(df_all.iloc[i])
-                    print("-----how-----")
+                    #print(df_all.iloc[i])
+                    #print("-----how-----")
                     if str(row[col]) != str(df_record.iloc[0][col]):
                         #print(row[col], df_record.iloc[0][col])
                         is_match = False
@@ -1902,8 +1908,12 @@ def change_to_send_format(df: pd.DataFrame) -> pd.DataFrame:
             df_send.loc[mask, '備考'] = df_send.loc[mask, '備考'].astype(str).apply(
                 lambda x: x + " " + col if x and x != "nan" else col
             )
-    # 送信に必要なカラムのみを選択
-    df_send = df_send[['種目','ラウンド','ﾚｰﾝ','氏名', '学年','gender' ,'記録','風','順位','備考','ｺﾒﾝﾄ']]
+    # 送信に必要なカラムを定義
+    required_columns = ['種目','競技','ラウンド','ﾚｰﾝ','氏名', '学年','gender' ,'記録','風','順位','備考','ｺﾒﾝﾄ']
+    
+    # 存在するカラムのみを選択
+    available_columns = [col for col in required_columns if col in df_send.columns]
+    df_send = df_send[available_columns]
     return df_send
 
 def process_df(df: pd.DataFrame, univ_name: str) -> pd.DataFrame:
