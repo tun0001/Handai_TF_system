@@ -23,7 +23,8 @@ if __name__ == "__main__":
         "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
         "https://gold.jaic.org/tokushima/250811/kyougi.html",
         "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
-        "http://npo-kochi.sports.coocan.jp/taikaikekka/23/07kokutaiU16/kyougi.html"
+        #"http://npo-kochi.sports.coocan.jp/taikaikekka/23/07kokutaiU16/kyougi.html",
+        "https://gold.jaic.org/jaic/icaak/record/2025/7_1stLONG/kyougi.html"
 
         }
     url= "https://www.ui-techno.jp/kanjitsu/game/r_23/kirokukai/kyougi.html"

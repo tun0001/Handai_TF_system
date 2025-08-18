@@ -8,14 +8,6 @@ import math
 import re
 import time
 
-# def get_database_dir():
-#     # Dockerコンテナ内では /univ-athlete-db/database
-#     # それ以外の場合は相対パスで univ-athlete-db/database
-#     if os.path.exists('/univ-athlete-db/database'):
-#         return Path('/univ-athlete-db/database')
-#     else:
-#         return Path('univ-athlete-db/database')
-
 def get_database_dir():
     """
     環境に依存しない形でデータベースディレクトリのパスを取得する
@@ -437,7 +429,7 @@ def write_to_new_sheet(
     cred_dict: dict | None = None,
     num_rows: int = 100,
     num_cols: int = 50,
-):
+    ):
     """
     新規シートを作成して data を一括で書き込む
     既にシートが存在する場合は作成せず、そのまま利用する
@@ -517,7 +509,7 @@ def member_best_to_sheet(
     spreadsheet_id_member: str,
     spreadsheet_id_best: str,
     creds_dict: dict | None = None
-):
+    ):
     """
     メンバーシートからベスト記録シートにデータを転記する
     cred_dict: 認証情報の辞書形式
@@ -644,7 +636,7 @@ def member_sb_to_sheet(
     spreadsheet_id_sb: str,
     creds_dict: dict | None = None,
     season: int = 2025
-):
+    ):
     """
     メンバーシートから指定年のSB（シーズンベスト）記録を抽出してSBシートに転記する
     さらに各種目毎のワークシートを作成してSBランキングを作成する
@@ -660,7 +652,7 @@ def member_sb_to_sheet(
     
     # メンバーシートを開く
     member_sheets = client.open_by_key(spreadsheet_id_member)
-    member_list_active = load_member_list()
+    #member_list_active = load_member_list()
     df_sb = pd.DataFrame()
     df_sb_pre = load_sheet(
         spreadsheet_id=spreadsheet_id_sb,
@@ -673,7 +665,7 @@ def member_sb_to_sheet(
         sheet_name="部員一覧",
         creds_dict=creds_dict
     )[['member_name', 'Active']]
-    #member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
+    member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
     print(member_list_active)
     
     for member in member_list_active:
@@ -800,8 +792,8 @@ def member_sb_to_sheet(
     if not df_sb_pre.empty and 'member_name' in df_sb_pre.columns:
         df_sb_pre = df_sb_pre[~df_sb_pre['member_name'].isin(member_list_active)]
 
-    # 削除したdf_pb_preとdf_pbを結合させて最新のdf_pbにする
-    df_sb = pd.concat([df_sb, df_sb_pre], ignore_index=True)
+    # # 削除したdf_pb_preとdf_pbを結合させて最新のdf_pbにする
+    # df_sb = pd.concat([df_sb, df_sb_pre], ignore_index=True)
 
     # 各種目・性別毎にランキングシートを作成
     #events = df_sb['event'].unique()
@@ -901,7 +893,7 @@ def member_pb_to_sheet(
     spreadsheet_id_member: str,
     spreadsheet_id_pb: str,
     creds_dict: dict | None = None
-):
+    ):
     """
     メンバーシートから各部員のPB（パーソナルベスト）記録を抽出してPBシートに転記する
     さらに各種目毎のワークシートを作成してPBランキングを作成する

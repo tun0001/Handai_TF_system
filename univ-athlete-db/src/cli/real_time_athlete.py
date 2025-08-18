@@ -219,7 +219,7 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
         print(f"選手名: {name}, 種目: {event_name}, 種別: {event_type}")
         print(df_result)
         print(name)
-        time.sleep(1)  # API制限対策のため1秒待機
+        #time.sleep(1)  # API制限対策のため1秒待機
         write_member_record_to_sheet(
             spreadsheet_id=spread_sheet_ID_member,
             sheet_name=name,
@@ -227,15 +227,16 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
             cred_dict=creds_dict
         )
         time.sleep(1.5)  # API制限対策のため1秒待機
-        df_all=load_sheet(
-            spreadsheet_id=spread_sheet_ID_member,
-            sheet_name=name,
-            creds_dict=creds_dict
-        )
-        df_result_send = return_record_status(df_all,df_result,univ)
-        df_result_send['氏名']=name
-        print(df_result_send)
-        time.sleep(2)  # API制限対策のため1秒待機
+        # df_all=load_sheet(
+        #     spreadsheet_id=spread_sheet_ID_member,
+        #     sheet_name=name,
+        #     creds_dict=creds_dict
+        # )
+        # df_result_send = return_record_status(df_all,df_result,univ)
+        # df_result_send['氏名']=name
+        # print(df_result_send)
+        # time.sleep(2)  # API制限対策のため1秒待機
+
         # write_to_new_sheet(
         #     spreadsheet_id=spread_sheet_ID_conference,
         #     sheet_name=conference_name,

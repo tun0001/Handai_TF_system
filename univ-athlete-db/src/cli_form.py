@@ -13,11 +13,11 @@ if __name__ == "__main__":
     creds_dict=os.getenv("GOOGLE_ACOUNT_KEY_SHEET_TF")
     creds_dict = json.loads(creds_dict)
 
-    # process_sheet(
-    #     spreadsheet_id=spread_sheet_ID_member,
-    #     sheet_name="市川　達也",
-    #     creds_dict=creds_dict
-    # )
+    process_sheet(
+        spreadsheet_id=spread_sheet_ID_member,
+        sheet_name="小川　真帆",
+        creds_dict=creds_dict
+    )
 
     # announce_discord = False
-    run_form_change(spread_sheet_ID_member=spread_sheet_ID_member, spread_sheet_ID_form=spread_sheet_ID_form, creds_dict=creds_dict)
+    #run_form_change(spread_sheet_ID_member=spread_sheet_ID_member, spread_sheet_ID_form=spread_sheet_ID_form, creds_dict=creds_dict)

@@ -17,79 +17,79 @@ from urllib.parse import urljoin
 #aa512025022@1@0@0@AW500@ALL
 # 包括的種目コードマッピング（全発見種目を統合）
 COMPREHENSIVE_EVENT_CODES = {
-    # 男子対校種目 (@1@0@0@)
-    "男子対校100m": "A0100",
-    # "男子対校200m": "A0200", 
-    # "男子対校400m": "A0400",
-    # "男子対校800m": "A0800",
-    # "男子対校1500m": "A1150",
-    # "男子対校5000m": "A1500",
-    # "男子対校110mH": "AH111",
-    # "男子対校400mH": "AH401",
-    # "男子対校3000mSC": "AS301",
-    # "男子対校5000mW": "AW500",
-    # "男子対校4x100mR": "D0400",
-    # "男子対校4x400mR": "D1600",
-    # "男子対校走高跳": "FJHJ0",
-    # "男子対校棒高跳": "FJHP0",
-    # "男子対校走幅跳": "FJLJ0",
-    # "男子対校三段跳": "FJTJ0",
-    # "男子対校砲丸投": "FTAT1",
-    # "男子対校円盤投": "FTDT1",
-    # "男子対校ハンマー投": "FTHT1",
-    # "男子対校やり投": "FTJT1",
+    #男子対校種目 (@1@0@0@)
+     "男子対校100m": "A0100",
+    "男子対校200m": "A0200", 
+     "男子対校400m": "A0400",
+    "男子対校800m": "A0800",
+    "男子対校1500m": "A1150",
+    "男子対校5000m": "A1500",
+    "男子対校110mH": "AH111",
+    "男子対校400mH": "AH401",
+    "男子対校3000mSC": "AS301",
+     "男子対校5000mW": "AW500",
+    "男子対校4x100mR": "D0400",
+    "男子対校4x400mR": "D1600",
+    "男子対校走高跳": "FJHJ0",
+    "男子対校棒高跳": "FJHP0",
+    "男子対校走幅跳": "FJLJ0",
+    "男子対校三段跳": "FJTJ0",
+    "男子対校砲丸投": "FTAT1",
+    "男子対校円盤投": "FTDT1",
+    "男子対校ハンマー投": "FTHT1",
+    "男子対校やり投": "FTJT1",
     
-    # # 女子対校種目 (@2@0@0@) - 関西医科学生大会で新発見
-    # "女子対校100m": "A0100",
-    # "女子対校200m": "A0200",  # 🎯 新発見！
-    # "女子対校400m": "A0400",
-    # "女子対校800m": "A0800",
-    # "女子対校1500m": "A1150", # 🎯 新発見！
-    # "女子対校3000m": "A1300",
-    # "女子対校5000m": "A1500",
-    # "女子対校100mH": "AH101",
-    # "女子対校400mH": "AH401",
-    # "女子対校3000mSC": "AS301",
-    # "女子対校5000mW": "AW500",
-    # "女子対校4x100mR": "D0400",
-    # "女子対校4x400mR": "D1600",
-    # "女子対校走高跳": "FJHJ0",
-    # "女子対校走幅跳": "FJLJ0",
-    # "女子対校砲丸投": "FTAT6",
-    # "女子対校円盤投": "FTDT3",
-    # "女子対校ハンマー投": "FTHT3",
-    # "女子対校やり投": "FTJT3",
+    #女子対校種目 (@2@0@0@) - 関西医科学生大会で新発見
+    "女子対校100m": "A0100",
+    "女子対校200m": "A0200",  # 🎯 新発見！
+    "女子対校400m": "A0400",
+    "女子対校800m": "A0800",
+    "女子対校1500m": "A1150", # 🎯 新発見！
+    "女子対校3000m": "A1300",
+    "女子対校5000m": "A1500",
+    "女子対校100mH": "AH101",
+    "女子対校400mH": "AH401",
+    "女子対校3000mSC": "AS301",
+    "女子対校5000mW": "AW500",
+    "女子対校4x100mR": "D0400",
+    "女子対校4x400mR": "D1600",
+    "女子対校走高跳": "FJHJ0",
+    "女子対校走幅跳": "FJLJ0",
+    "女子対校砲丸投": "FTAT6",
+    "女子対校円盤投": "FTDT3",
+    "女子対校ハンマー投": "FTHT3",
+    "女子対校やり投": "FTJT3",
     
-    # 男子OP種目 (@1@1@0@)
+    #男子OP種目 (@1@1@0@)
     "男子OP100m": "A0100",
-    # "男子OP400m": "A0400",
-    # "男子OP1500m": "A1150",
-    # "男子OP5000m": "A1500",
-    # "男子OP5000mW": "AW500",
-    # "男子OP4x400mR": "D1600",
-    # "男子OP棒高跳": "FJHP0",
-    # "男子OP走幅跳": "FJLJ0",
-    # "男子OP砲丸投": "FTAT1",
-    # "男子OP円盤投": "FTDT1",
-    # "男子OPハンマー投": "FTHT1",
-    # "男子OPやり投": "FTJT1",
+    "男子OP400m": "A0400",
+    "男子OP1500m": "A1150",
+    "男子OP5000m": "A1500",
+    "男子OP5000mW": "AW500",
+    "男子OP4x400mR": "D1600",
+    "男子OP棒高跳": "FJHP0",
+    "男子OP走幅跳": "FJLJ0",
+    "男子OP砲丸投": "FTAT1",
+    "男子OP円盤投": "FTDT1",
+    "男子OPハンマー投": "FTHT1",
+    "男子OPやり投": "FTJT1",
     
-    # # 女子OP種目 (@2@1@0@)
-    # "女子OP100m": "A0100",
-    # "女子OP400m": "A0400",
-    # "女子OP1500m": "A1150",
-    # "女子OP5000m": "A1500",
-    # "女子OP5000mW": "AW500",
-    # "女子OP4x400mR": "D1600",
-    # "女子OP走幅跳": "FJLJ0",
-    # "女子OP砲丸投": "FTAT6",
-    # "女子OP円盤投": "FTDT3",
-    # "女子OPハンマー投": "FTHT3",
-    # "女子OPやり投": "FTJT3",
+    #女子OP種目 (@2@1@0@)
+    "女子OP100m": "A0100",
+    "女子OP400m": "A0400",
+    "女子OP1500m": "A1150",
+    "女子OP5000m": "A1500",
+    "女子OP5000mW": "AW500",
+    "女子OP4x400mR": "D1600",
+    "女子OP走幅跳": "FJLJ0",
+    "女子OP砲丸投": "FTAT6",
+    "女子OP円盤投": "FTDT3",
+    "女子OPハンマー投": "FTHT3",
+    "女子OPやり投": "FTJT3",
     
-    # # 非公認種目 (@1@2@0@, @2@2@0@)
-    # "男子非公認4x400mR": "D1600",
-    # "女子非公認4x400mR": "D1600",
+    # 非公認種目 (@1@2@0@, @2@2@0@)
+    "男子非公認4x400mR": "D1600",
+    "女子非公認4x400mR": "D1600",
 }
 
 def get_category_code(event_name):
@@ -294,75 +294,107 @@ def get_event_results(session, gid, event_name, event_code):
     return unique_results if unique_results else None
 
 def parse_results_from_table(rows, event_name, pattern):
-    """テーブルから結果データを解析"""
+    """テーブルから結果データを解析（組ごとの風速情報対応）"""
     results = []
     current_round = "決勝"
     current_group = ""
     wind_info = ""
     
-    def extract_wind_info_from_rows(rows):
-        """競技結果のHTMLから風速情報を抽出"""
-        for row in rows:
-            cells = row.find_all(['td', 'th'])
-            for cell in cells:
-                cell_text = cell.get_text().strip()
-                wind_pattern = r'(\+|\-)?(\d+\.\d+)\)'
-                if '組' in cell_text and ('(+' in cell_text or '(-' in cell_text):
-                    match = re.search(wind_pattern, cell_text)
-                    if match:
-                        sign = match.group(1) if match.group(1) else '+'
-                        value = match.group(2)
-                        return f"{sign}{value}"
-        return ""
-    
-    wind_info = extract_wind_info_from_rows(rows)
-    
     for row in rows:
+        #print(row)
+        #print("-----")
         cells = row.find_all(['td', 'th'])
         
-        if len(cells) < 4:
+        if len(cells) < 1:
             continue
         
-        # ラウンド情報の判定
+        # 種目ヘッダーをスキップ
+        if len(cells) == 1 and "対校" in cells[0].get_text():
+            continue
+            
+        # ラウンド情報をスキップ（決勝、予選など）
         if len(cells) == 1:
             cell_text = cells[0].get_text().strip()
             if any(keyword in cell_text for keyword in ['決勝', '準決勝', '予選']):
-                current_round = cell_text
+                # cell_textに含まれるkeywordを抽出してcurrent_roundに設定
+                for keyword in ['決勝', '準決勝', '予選']:
+                    if keyword in cell_text:
+                        current_round = keyword
+                        break
                 continue
         
-        # 組情報の判定
-        if len(cells) >= 3:
+        
+        if len(cells) >= 1:
             cell_text = cells[0].get_text().strip()
-            if '組' in cell_text and ('(' in cell_text or '+' in cell_text or '-' in cell_text):
-                current_group = cell_text
-                # 風速情報を再抽出
-                wind_pattern = r'(\+|\-)?(\d+\.\d+)\)'
-                match = re.search(wind_pattern, cell_text)
-                if match:
-                    sign = match.group(1) if match.group(1) else '+'
-                    value = match.group(2)
-                    wind_info = f"{sign}{value}"
+            #print(cells[0])
+            # 組情報のパターンマッチング（例: "1組  (+1.8)"）
+            group_wind_pattern = r'(\d+)組\s*\(\s*([+\-]?\d+\.\d+)\s*\)'
+            match = re.search(group_wind_pattern, cell_text)
+            if match:
+                current_group = f"{match.group(1)}組"
+                wind_value = match.group(2)
+                wind_info = wind_value if wind_value.startswith(('+', '-')) else f"+{wind_value}"
+                print(f"組情報検出: {current_group}, 風速: {wind_info}")
+                continue
+        # 組情報と風速情報の抽出
+        if len(cells) >= 1:
+            cell_text = cells[0].get_text().strip()
+            #print(cells[0])
+            # 組情報のパターンマッチング（例: "1組  (+1.8)"）
+            group_pattern = r'(\d+)組\s'
+            match = re.search(group_pattern, cell_text)
+            if match:
+                current_group = f"{match.group(1)}組"
+                #wind_value = match.group(2)
+                #wind_info = wind_value if wind_value.startswith(('+', '-')) else f"+{wind_value}"
+                print(f"組情報検出: {current_group}")
+                continue
+        # ヘッダー行をスキップ（順位、ﾚｰﾝ、氏名など）
+        if len(cells) >= 4:
+            header_text = cells[0].get_text().strip()
+            if header_text in ["順位", "ﾚｰﾝ"]:
                 continue
         
         # 結果データの解析
         if len(cells) >= 6:
             try:
                 rank_text = cells[0].get_text().strip()
-                # 順位が数字でない場合（DNS、DNF等）をスキップ
-                # if not rank_text.replace('.', '').isdigit():
-                #     continue
-                    
+                # 順位が数字でない場合も処理
                 rank = int(float(rank_text)) if rank_text.replace('.', '').isdigit() else rank_text
                 
                 lane_text = cells[1].get_text().strip()
                 lane = int(lane_text) if lane_text.isdigit() else lane_text
                 
-                athlete_info = cells[2].get_text().strip()
-                athlete_number = cells[3].get_text().strip()
-                affiliation = cells[4].get_text().strip()
-                record = cells[5].get_text().strip()
-                note = cells[6].get_text().strip() if len(cells) > 6 else ""
+                # 選手名と番号を抽出（リンクから）
+                athlete_cell = cells[2]
+                athlete_link = athlete_cell.find('a')
+                if athlete_link:
+                    athlete_text = athlete_link.get_text().strip()
+                    # 選手名と番号を分離（例: "折橋　巧也(2):542"）
+                    athlete_pattern = r'(.+?)\([^\)]*\):(\d+)'
+                    athlete_match = re.search(athlete_pattern, athlete_text)
+                    if athlete_match:
+                        athlete_name = athlete_match.group(1).strip()
+                        athlete_number = athlete_match.group(2)
+                    else:
+                        athlete_name = athlete_text
+                        athlete_number = ""
+                    athlete_name = athlete_text
+                else:
+                    athlete_name = athlete_cell.get_text().strip()
+                    athlete_number = ""
                 
+                # 所属情報を抽出
+                affiliation_cell = cells[3]
+                affiliation_link = affiliation_cell.find('a')
+                if affiliation_link:
+                    affiliation = affiliation_link.get_text().strip()
+                else:
+                    affiliation = affiliation_cell.get_text().strip()
+                
+                record = cells[4].get_text().strip()
+                note = cells[5].get_text().strip() if len(cells) > 5 else ""
+                print(wind_info)
                 # ラウンド情報をパターンから推定
                 if "@1@" in pattern:
                     round_name = "決勝"
@@ -373,6 +405,15 @@ def parse_results_from_table(rows, event_name, pattern):
                 else:
                     round_name = current_round
                 
+
+                # 性別の判定
+                # if "男子" in event_name:
+                #     gender = "男子"
+                # elif "女子" in event_name:
+                #     gender = "女子"
+                # else:
+                #     gender = ""
+                
                 results.append({
                     '種目': event_name,
                     '競技': event_name,
@@ -382,15 +423,17 @@ def parse_results_from_table(rows, event_name, pattern):
                     '順位': rank,
                     'ﾚｰﾝ': lane,
                     '風': wind_info,
-                    '氏名': athlete_info,
-                    '所属': athlete_number,
-                    '記録': affiliation,
-                    '備考': record,
-                    'note': note
+                    '氏名': athlete_name,
+                    # '選手番号': athlete_number,
+                    '所属': affiliation,
+                    '記録': record,
+                    '備考': note
                 })
-            except (ValueError, IndexError) as e:
-                continue
                 
+            except (ValueError, IndexError) as e:
+                print(f"データ解析エラー: {e}, cells: {[cell.get_text().strip() for cell in cells]}")
+                continue
+    
     return results
 def extract_competition_info(soup):
     """大会詳細ページから基本情報を抽出"""
@@ -660,4 +703,17 @@ if __name__ == "__main__":
         #     print(f"📈 成功率: {success_rate:.1f}% - 完全適応型での貴重なデータ取得です！")
     else:
         print("\n❌ 結果の取得に失敗しました")
+        #print(df_result['athlete_number'].unique())
+        print(df_result[df_result['所属'] == "大阪大"])  # 優勝者の情報を表示
+        #print(df_result['備考'].unique())
+        #print(df_result['note'].unique)  # 新発見種目の情報を表示
+        # success_rate = len(set(r['event'] for r in results)) / len(COMPREHENSIVE_EVENT_CODES) * 100
+        # if success_rate >= 95.0:
+        #     print("🎉🎉🎉 **完全適応型で95%以上の最高成果を達成！** 🎉🎉🎉")
+        # elif success_rate >= 90.0:
+        #     print("🎉🎉 **完全適応型で90%以上の素晴らしい成果を達成！** 🎉🎉")
+        # else:
+        #     print(f"📈 成功率: {success_rate:.1f}% - 完全適応型での貴重なデータ取得です！")
+    # else:
+    #     print("\n❌ 結果の取得に失敗しました")
 

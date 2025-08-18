@@ -15,9 +15,20 @@ if __name__ == "__main__":
     creds_dict=os.getenv("GOOGLE_ACOUNT_KEY_SHEET_TF")
     creds_dict = json.loads(creds_dict)
 
+    # spread_sheet_ID_member=os.getenv("SPREAD_SHEET_ID_MEMBER")
+    # spread_sheet_ID_form=os.getenv("SPREAD_SHEET_ID_FORM")
+    # creds_dict=os.getenv("GOOGLE_ACOUNT_KEY_SHEET_TF")
+    # creds_dict = json.loads(creds_dict)
+    member_list = load_sheet(
+        spreadsheet_id=spread_sheet_ID_member,
+        sheet_name="部員一覧",
+        creds_dict=creds_dict
+    )[['member_name', 'Active']]
+    member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
+
     # process_sheetの実行例
-    member_list=load_member_list()
-    for member in member_list[:3]:
+    #ember_list=load_member_list()
+    for member in member_list_active:
         print(f"Processing member: {member}")
         time.sleep(1.5)  # API制限対策のため1秒待機
         process_sheet(

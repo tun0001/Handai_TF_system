@@ -4,8 +4,8 @@ from cli.real_time_athlete import *
 
 
 if __name__ == "__main__":
-    #url="https://games.athleteranking.com/gamedata.php?gid=ay022025010"
-    url="https://games.athleteranking.com/gamedata.php?gid=aa512025022"
+    url="https://games.athleteranking.com/gamedata.php?gid=ay022025010"
+    #url="https://games.athleteranking.com/gamedata.php?gid=aa512025022"
     #TimeTable.htmlじゃないとむり
     #url="https://games.athleteranking.com/gamedata.php?gid=ap112025005"
     spread_sheet_ID_conference=os.getenv("SPREAD_SHEET_ID_CONFERENCE")
