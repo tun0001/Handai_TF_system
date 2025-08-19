@@ -39,20 +39,13 @@ def load_com_urls() -> list[str]:
         # 空行を除いて先頭・末尾の改行をstrip
         return [line.strip() for line in f if line.strip()]
 
-def load_member_list() -> list[str]:
-    """
-    メンバーリストを読み込み、リストとして返す。
-    ファイルが存在しない場合は空のリストを返す。
-    """
-    # プロジェクトルートからの相対パス
-    file_path = Path('univ-athlete-db/database/member_list.txt')
-    #file_path = get_database_dir() / 'member_list.txt'
-    try:
-        with file_path.open(encoding='utf-8') as f:
-            # 空行を除いて先頭・末尾の改行をstrip
-            return [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        return []
+def load_member_list(spreadsheet_ID_member, creds_dict) -> list[str]:
+    member_list = load_sheet(
+        spreadsheet_id=spreadsheet_ID_member,
+        sheet_name="部員一覧",
+        creds_dict=creds_dict
+    )[['member_name']]
+    return member_list['member_name'].tolist()
 
 def add_member_list(name):
     """
@@ -140,7 +133,7 @@ def reset_sheets(
     spreadsheet_id: str,
     sheet_names: list[str],
     cred_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの指定シート以外をすべて削除する，
     cred_dict: 認証情報の辞書形式
@@ -169,7 +162,7 @@ def deduplicate_sheet(
         spreadsheet_id: str,
         sheet_name: str,
         cred_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの指定シートから重複行を削除する
     cred_dict: 認証情報の辞書形式
@@ -216,7 +209,7 @@ def check_sheet_exists(
     spreadsheet_id: str,
     sheet_name: str,
     cred_dict: dict | None = None,
-) -> bool:
+    ) -> bool:
     """
     指定されたスプレッドシートに指定シートが存在するか確認する
     cred_dict: 認証情報の辞書形式
@@ -240,7 +233,7 @@ def delete_sheet(
     spreadsheet_id: str,
     sheet_name: str,
     cred_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートから指定シートを削除する
     cred_dict: 認証情報の辞書形式
@@ -266,7 +259,7 @@ def merge_sheets(
     source_sheet_name: str,
     target_sheet_name: str,
     cred_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの source_sheet_name の内容を target_sheet_name にマージする
     cred_dict: 認証情報の辞書形式
@@ -344,23 +337,25 @@ def set_member_active(
     try:
         worksheet = sh.worksheet("部員一覧")
     except gspread.exceptions.WorksheetNotFound:
-        print(f"Worksheet '部員一覧' not found in spreadsheet '{spreadsheet_id}'.")
-        return
+        # Worksheet not found, create it
+        worksheet = sh.add_worksheet(title="部員一覧", rows="100", cols="20")
+        print(f"Created new worksheet '部員一覧' in spreadsheet '{spreadsheet_id}'.")
 
     # シートの全データ取得
     data = worksheet.get_all_values()
 
-    if not data or len(data) < 2:
-        print("No data found in the sheet.")
-        return
+    # if not data or len(data) < 2:
+    #     print("No data found in the sheet.")
+    #     return
 
     # DataFrameに変換
     df = pd.DataFrame(data[1:], columns=data[0])
 
     # member_nameカラムが存在するか確認
     if 'member_name' not in df.columns:
-        print("'member_name' column not found in the sheet.")
-        return
+        # member_name column doesn't exist, create it with header
+        df = pd.DataFrame(columns=['member_name'])
+        print("Created new 'member_name' column in the sheet.")
 
     # Activeカラムが存在しない場合は追加
     if 'Active' not in df.columns:
@@ -381,11 +376,15 @@ def set_member_active(
         new_row = pd.DataFrame({'member_name': [member_name], 'Active': ['Active']})
         df = pd.concat([new_row, df], ignore_index=True)
         print(f"Added new member '{member_name}' and set as Active.")
-        return
+        #return
+    
     member_row = df.loc[df['member_name'] == member_name].copy()
     df_without_member = df.loc[df['member_name'] != member_name].copy()
     df = pd.concat([member_row, df_without_member], ignore_index=True)
     # シートを更新
+    print(df)
+    # NaNを空文字に変換
+    df = df.fillna("")
     updated_data = [df.columns.tolist()] + df.values.tolist()
     worksheet.clear()
     worksheet.update('A1', updated_data)
@@ -395,6 +394,7 @@ def write_member_record_to_sheet(
     spreadsheet_id: str,
     sheet_name: str | int,
     data,
+    univ_name: str,
     cred_dict: dict | None = None,
     ):
     #-------------
@@ -418,7 +418,8 @@ def write_member_record_to_sheet(
     process_sheet(
         spreadsheet_id=spreadsheet_id,
         sheet_name=sheet_name,
-        creds_dict=cred_dict
+        creds_dict=cred_dict,
+        univ_name=univ_name
     )
 
 
@@ -800,7 +801,7 @@ def member_sb_to_sheet(
     genders = df_sb['gender'].unique()
     event_list=[
             "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
-            "5000mW", "10000mW", "20kW", "50kmW",
+            "5000mW", "10000mW","10kmW", "20kmW", "50kmW",
             "110mH", "100mH", "300mH", "400mH", "3000mSC",
             "4x100mR", "4x400mR", "4x200mR", "4x800mR",
             "走高跳", "走幅跳", "三段跳", "棒高跳",
@@ -916,6 +917,10 @@ def member_pb_to_sheet(
         sheet_name="member_pb_all",
         creds_dict=creds_dict
     )
+    
+    # Handle case where load_sheet returns None
+    if df_pb_pre is None:
+        df_pb_pre = pd.DataFrame()
     df_pb =pd.DataFrame()
 
     member_list = load_sheet(
@@ -956,7 +961,7 @@ def member_pb_to_sheet(
         #event_list = df_member['event'].unique()
         event_list=[
             "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
-            "5000mW", "10000mW", "20kW", "50kmW",
+            "5000mW", "10000mW","10kmW", "20kmW", "50kmW",
             "110mH", "100mH", "300mH", "400mH", "3000mSC",
             "4x100mR", "4x400mR", "4x200mR", "4x800mR",
             "走高跳", "走幅跳", "三段跳", "棒高跳",
@@ -1155,7 +1160,7 @@ def overwrite_sheet(
     cred_dict: dict,
     num_rows: int = 100,
     num_cols: int = 50,
-):
+    ):
     """
     シートを丸ごとクリアして data を上書きします。
     • data: pandas.DataFrame または list[list]（1行目がヘッダー）
@@ -1384,7 +1389,7 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
                 "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
             ]
             event_wark_list=[
-                "5000mW", "10000mW", "20kW", "50kmW"
+                "5000mW", "10000mW", "10kmW","20kmW", "50kmW"
             ]
             event_hardle_list = [
             "110mH","100mH", "300mH", "400mH", "3000mSC"
@@ -1541,7 +1546,15 @@ def remove_wind_from_record(record):
 
 def extract_record(record):
     # 例: '1:00.37[ 1:00.370]' → '1:00.37'
-    # まず 1:00.37 のような形式を優先
+    # まず 1:10:30 のような時間形式を優先
+    m = re.search(r'(\d+:\d+:\d+)', record)
+    if m:
+        return m.group(1)
+    # 次に 52:10 のような分:秒形式を追加
+    m = re.search(r'(\d+:\d+)', record)
+    if m:
+        return m.group(1)
+    # 次に 1:00.37 のような形式を優先
     m = re.search(r'(\d+:\d+\.\d+)', record)
     if m:
         return m.group(1)
@@ -1719,6 +1732,18 @@ def get_compare_record(df: pd.DataFrame) -> pd.DataFrame:
         if not isinstance(record, str):
             return None
         record = record.strip()
+        # 時間形式 (例: 1:10:30)
+        m = re.match(r'^(\d+):(\d+):(\d+)$', record)
+        if m:
+            hour, min_, sec = m.groups()
+            # 時間・分・秒を2桁ずつに揃えて連結
+            return float(f"{int(hour):01d}{int(min_):02d}{int(sec):02d}")
+        # 分:秒形式 (例: 52:10)
+        m = re.match(r'^(\d+):(\d+)$', record)
+        if m:
+            min_, sec = m.groups()
+            # 分・秒を2桁ずつに揃えて連結
+            return float(f"{int(min_):02d}{int(sec):02d}")
         # 時間形式 (例: 17:09.17, 1:00.370)
         m = re.match(r'^(\d+):(\d+)\.(\d+)$', record)
         if m:
@@ -1947,7 +1972,7 @@ def process_sheet(
     sheet_name: str,
     univ_name: str = "大阪大",
     creds_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの指定シートをソートする
     cred_dict: 認証情報の辞書形式
@@ -2210,7 +2235,7 @@ def get_grade_record(
     spreadsheet_id: str,
     sheet_name: str,
     cred_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの指定シートからグレード記録を取得する
     cred_dict: 認証情報の辞書形式
@@ -2256,7 +2281,7 @@ def choose_best_sheet(
     member_list: list[str],
     sheet_name: str,
     cred_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの指定シートから最適なデータを選択し、別のスプレッドシートに書き込む
     cred_dict: 認証情報の辞書形式
@@ -2305,7 +2330,7 @@ def load_sheet(
     spreadsheet_id: str,
     sheet_name: str,
     creds_dict: dict | None = None,
-):
+    ):
     """
     指定されたスプレッドシートの指定シートを読み込む
     cred_dict: 認証情報の辞書形式

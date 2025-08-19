@@ -95,7 +95,8 @@ def run_form_change(spread_sheet_ID_member, spread_sheet_ID_form, creds_dict):
             spreadsheet_id=spread_sheet_ID_member,
             sheet_name=name,
             data=df_result.to_dict(),  # Seriesを辞書に変換
-            cred_dict=creds_dict
+            cred_dict=creds_dict,
+            univ_name=df_result['所属']
         )
         time.sleep(1)  # API制限対策のため1秒待機
         write_to_new_sheet( 

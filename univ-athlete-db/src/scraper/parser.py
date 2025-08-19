@@ -108,9 +108,12 @@ def parse_player_name(name):
     奥野　賢汰
     奥野　賢汰
     """
-    # 日本語名部分のみ抽出（漢字・ひらがな・カタカナ・全角スペース・半角スペースのみ）
-    m = re.match(r'^([\u3000-\u303F\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\s]+)', name)
+    import re
+    # 日本語名部分のみ抽出（漢字・ひらがな・カタカナ・全角スペース・半角スペース・CJK互換漢字のみ）
+    # CJK統合漢字拡張A、CJK互換漢字も含める
+    m = re.match(r'^([\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uF900-\uFAFF\s]+)', name)
     jp_name = m.group(1).strip() if m else name
+    #print(name,jp_name)
     # 括弧内(M2)などを除去
     jp_name = re.sub(r'[\(\（][^)\）]*[\)\）]', '', jp_name).strip()
     # 姓名の間の空白を全て全角スペースに統一
@@ -612,7 +615,7 @@ def parse_each_event_name_kaisizikoku(html):
 
             # 種目タイプ判定
             event_name = row_dict.get('種目', '')
-            print(event_name)
+            #print(event_name)
             if '種' in event_name:
                 event_type = 'Mult'
             elif '跳' in event_name:
@@ -625,7 +628,7 @@ def parse_each_event_name_kaisizikoku(html):
                 event_type = 'Half'
             else:
                 event_type = 'Other'
-            print(event_type)
+            #print(event_type)
             row_dict['type'] = event_type
 
             # 各セルの<td>に含まれるhrefのhtmlを取得（種目セルに限らず）
@@ -681,3 +684,10 @@ def extract_athlete_data(results):
         athlete_data.append(athlete_info)
     return athlete_data
 
+if __name__ == "__main__":
+    # テスト用のダミーデータ
+    name="川﨑　雄介"
+    name_2=parse_player_name(name)
+    print(name_2)
+    # extracted_data = extract_athlete_data(test_results)
+    print(extracted_data)

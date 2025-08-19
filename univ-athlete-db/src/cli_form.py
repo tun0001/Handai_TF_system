@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     process_sheet(
         spreadsheet_id=spread_sheet_ID_member,
-        sheet_name="小川　真帆",
+        sheet_name="松井　天",
         creds_dict=creds_dict
     )
 
