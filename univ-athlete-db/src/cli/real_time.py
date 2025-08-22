@@ -19,6 +19,250 @@ import asyncio
 from discord_poster import send_to_thread
 import time
 
+def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
+    """
+    競技のリアルタイム情報を取得し、スプレッドシートに更新する関数
+    """
+    base_url= get_base_url(url)
+    #  Get Url and HTML "競技者一覧画面""
+    url_kyougisya_itirann = urljoin(base_url, 'master.html')
+    
+    # Get url and HTML ”競技別一覧表(開始時刻)"
+    url_kyougi_betsu_itiran = urljoin(base_url, 'tt.html')
+    if check_url_exists(url_kyougi_betsu_itiran) is None:
+        print(f"⚠️ URL が存在しません: {url_kyougi_betsu_itiran}")
+        return
+    
+    # プロジェクトルートから database/realtime フォルダを指す
+    """
+    1.url->htmlを取得
+    2.大会名を取得
+    2.1.大会名のフォルダを作成
+    ・なければ作る．
+
+    
+    ・あれば，履歴を確保
+    """
+    html= fetch_html(url_kyougi_betsu_itiran)
+    if html is None:
+        print(f"⚠️ html が存在しません: {url_kyougi_betsu_itiran}")
+        return
+    
+    conference_name=parse_conference_title(html)
+    events_name= parse_each_event_name_kaisizikoku(html)
+    print(f"大会名: {conference_name}")
+    realtime_dir = Path(__file__).parent.parent.parent / 'database' / 'realtime'
+    conference_dir = realtime_dir / conference_name
+    status_path = conference_dir / "event_status.json"
+    results_path = conference_dir / "results.json"
+    
+    
+    #----------------------------------------------------
+    if not conference_dir.exists():
+        df_status= pd.DataFrame(events_name)
+        df_status["status"] = "未完了"
+        conference_dir.mkdir(parents=True, exist_ok=True)
+        df_status.to_json(str(status_path), orient="records", lines=True)
+        #df_results= pd.DataFrame([])
+        #df_results.to_json(str(results_path), orient="records", lines=True)
+        print(f"大会フォルダを作成しました: {conference_dir}")
+    
+    else:
+        df_status = pd.read_json(str(status_path), orient="records", lines=True)
+        #df_results=pd.read_json(str(results_path), orient="records", lines=True)
+        #df_results= pd.DataFrame([])
+        #print(df_status)
+    #----------------------------------------------------
+    now_result=parse_each_event_name_kaisizikoku(html)
+    df_now_result = pd.DataFrame(now_result)
+    df_status['状況']=df_now_result['状況']
+    df_peding= df_status[df_status["status"] == "未完了"]
+    #print(df_peding)
+    #print(df_status)
+    if df_peding.empty:
+        time.sleep(1)  # API制限対策のため1秒待機
+        if check_sheet_exists(
+            spreadsheet_id=spread_sheet_ID_conference,
+            sheet_name=conference_name,
+            cred_dict=creds_dict
+        ):
+            print("ℹ️ すでにすべての種目が完了しています。")
+        else:
+            print("?")
+        return
+    
+    
+    for index, row in df_peding.iterrows():
+        #まず，種目の完了を判断
+        if row['状況']== "結果":
+            url=row['url']
+            event_url = urljoin(base_url, url)
+            #大学名で探索して，速報を取得．
+            html_event= fetch_html(event_url)
+            results=[]
+            print(spread_sheet_dict['UNIV_NAME'])
+            for univ in spread_sheet_dict['UNIV_NAME']:
+                result=parse_event_detail(html_event,player_name=None,univ=univ)
+                if result is not None:
+                    
+                    # Convert to list if result is not already a list
+                    if isinstance(result, dict):
+                        result["univ"] = univ
+                        result = [result]
+                    else:
+                        # If result is already a list, add univ to each item
+                        for item in result:
+                            item["univ"] = univ
+                    results.extend(result)
+
+            
+            if results is not None:
+                print(results)
+                df_results=pd.DataFrame(results)
+
+                if '種目' in row:
+                    df_results['種目'] = row['種目']
+                if '種別' in row:
+                    df_results['種別'] = row['種別']
+                for idx in range(len(df_results)):
+                    print(row)
+                    print(df_results)
+                    univ_index = spread_sheet_dict["UNIV_NAME"].index(df_results.at[idx, 'univ'])
+                    print(f"University index: {univ_index}")
+                    if 'type' in row and row['type'] is not None:
+                        if row['type'] == 'Relay':
+                            if '種別' in row:
+                                if '男' in str(row['種別']):
+                                    name = "男子リレー"
+                                elif '女' in str(row['種別']):
+                                    name = "女子リレー"
+                                else:
+                                    name = "リレー"
+                                df_results.at[idx, '所属'] =  df_results.at[idx, 'univ'] 
+                            else:
+                                name = "リレー"
+                        else:
+                            # 氏名から全角スペースを除いた文字列でmember_listから一致するものをnameとする
+                            player_name = parse_player_name(str(df_results.iloc[idx]['氏名']))
+                            player_name = player_name.replace('　', '').replace(' ', '')
+                            name = None
+                            print(spread_sheet_dict["UNIV_NAME"])
+                            # Find the index of the university in the UNIV_NAME list
+                            
+                            print(df_results.at[idx, 'univ'])
+                            member_list = load_member_list(spreadsheet_ID_member=spread_sheet_dict["MEMBER"][univ_index], creds_dict=creds_dict)
+                            for member in member_list:
+                                #print(f"比較: {player_name} vs {member.replace('　', '').replace(' ', '')}")
+                                if player_name == member.replace('　', '').replace(' ', ''):
+                                    
+                                    name = member
+                                    break
+                            if name is None:
+                                name = parse_player_name(str(df_results.iloc[idx]['氏名']))
+                        
+                    print(f"選手名: {name}, 種目: {row['種目']}")
+                    #print(name)
+                    time.sleep(1)  # API制限対策のため1秒待機
+                    time.sleep(1)  # API制限対策のため1秒待機
+                    print(df_results)
+                    print(df_results.iloc[idx])
+                    write_member_record_to_sheet(
+                        spreadsheet_id=spread_sheet_dict["MEMBER"][univ_index],
+                        sheet_name=name,
+                        data=df_results.iloc[idx].to_dict(),
+                        univ_name=univ,
+                        cred_dict=creds_dict
+                    )
+                    time.sleep(1.5)  # API制限対策のため1秒待機
+                    df_all=load_sheet(
+                        spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
+                        sheet_name=name,
+                        creds_dict=creds_dict
+                    )
+                    df_result_send = return_record_status(df_all, df_results.iloc[idx], univ)
+                    df_result_send['氏名'] = name
+                    print(df_result_send)
+                    time.sleep(2)  # API制限対策のため1秒待機
+                    write_to_new_sheet(
+                        spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
+                        sheet_name=conference_name,
+                        data=df_result_send.to_dict(),
+                        cred_dict=creds_dict
+                    )
+                    if announce_discord:    
+                        if not df_result.empty and df_results.at[idx, 'univ']=="大阪大":
+                            # content: 各列名:値 形式で整形
+                            #------
+                            # process_sheet( 
+                            #     spreadsheet_id=spread_sheet_ID_member,
+                            #     sheet_name=name,
+                            #     creds_dict=creds_dict
+                            # )
+                            # df_all=load_sheet(
+                            #     spreadsheet_id=spread_sheet_ID_member,
+                            #     sheet_name=name,
+                            #     creds_dict=creds_dict
+                            # )
+                            # df_result_send = df_all[df_all['大会'] == conference_name]
+                            # if not df_result_send.empty:
+                            #     df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
+                            # else:
+                            #     df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
+                            # print(df_result_send)
+                            # # Remove columns that contain only NaN values or empty strings
+                            # df_result_send = df_result_send.dropna(axis=1, how='all')
+                            # df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
+                            # print(df_result_send)
+
+                            #------
+                            lines = []
+                            if isinstance(df_result_send, pd.Series):
+                                df_result_send = df_result_send.to_frame().T
+                            for _, row2 in df_result_send.iterrows():
+                                for col in df_result_send.columns:
+                                    lines.append(f"{col}: {row2[col]}")
+                                lines.append("")  # 行間を空ける
+                            # コードブロックで囲んで Discord に送信
+                            content = "```text\n" + "\n".join(lines) + "```"
+                            # thread_name: 大会名をスレッド名に
+                            thread_name = conference_name
+                            # channel_id, token は環境変数から取得
+                            #hannel_id = int(os.environ["DISCORD_CHANNEL_ID"])
+                            channel_id = int(1380200984256450751)
+                            token = os.environ["DISCORD_BOT_TOKEN"]
+                            print(f"▶️ Discord に投稿: channel={channel_id}, thread={thread_name}")
+                            # 非同期関数を実行
+                            asyncio.run(send_to_thread(
+                                token=token,
+                                channel_id=channel_id,
+                                thread_name=thread_name,
+                                content=content
+                            ))
+                        else:
+
+                            print("ℹ️ 新規結果なし。Discord 送信をスキップします。")
+
+                    #-------
+                    # write_to_new_sheet(
+                    #     spreadsheet_id=spread_sheet_ID_conference,
+                    #     sheet_name=conference_name,
+                    #     data=df_result.iloc[idx].to_dict(),
+                    #     cred_dict=creds_dict
+                    # )
+            df_status.at[index, "status"] = "完了"
+            df_status.to_json(str(status_path), orient="records", lines=True)
+            df_results.to_json(str(results_path), orient="records", lines=True)
+
+
+    # ─── Discord へ結果をポスト ─────────────────────────────────────
+            
+    #---------------------------------------------------
+    #print(df_results)
+    df_status.to_json(str(status_path), orient="records", lines=True)
+    #df_results.to_json(str(results_path), orient="records", lines=True)
+
+
+
 def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_member, creds_dict, announce_discord=True):
     """
     競技のリアルタイム情報を取得し、スプレッドシートに更新する関数
@@ -52,7 +296,7 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
         return
     
     conference_name=parse_conference_title(html)
-    add_conference_list(conference_name)
+    #add_conference_list(conference_name)
     events_name= parse_each_event_name_kaisizikoku(html)
     print(f"大会名: {conference_name}")
     #print(f"競技名: {events_name}")
@@ -91,10 +335,52 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
     #----------------------------------------------------
     now_result=parse_each_event_name_kaisizikoku(html)
     df_now_result = pd.DataFrame(now_result)
+    # #print(df_now_result[40:80])
+    # # df_now_resultの46番目の要素までの"status"を完了へ
+    # if len(df_now_result) > 46:
+    #     df_now_result.loc[:45, 'status'] = '完了'
+    #     df_now_result.loc[46:, 'status'] = '未完了'
+    # else:
+    #     df_now_result['status'] = '完了'
+    #df_results
+
+    #df_status=df_now_result
+    #df_status['status'] = "未完了"
+    # # df_now_resultから"状況"列を除いたデータフレームを作成
+    # df_now_result_without_status = df_now_result.drop(columns=['状況'], errors='ignore')
+
+    # # df_statusから"状況"と"status"列を除いたデータフレームを作成
+    # df_status_without_status = df_status.drop(columns=['状況', 'status'], errors='ignore')
+
+    # # df_now_resultとdf_statusをマージして、statusを取得
+    # df_merged = df_now_result_without_status.merge(
+    #     df_status[['種目', '種別', 'レース区分', 'status']], 
+    #     on=['種目', '種別', 'レース区分'], 
+    #     how='left'
+    # )
+
+    # # マージで見つからなかった行（NaN）のstatusを"未完了"に設定
+    # df_merged['status'] = df_merged['status'].fillna('未完了')
+
+    # # df_now_resultにstatusを追加
+    # df_now_result = df_now_result.merge(
+    #     df_merged[['種目', '種別', 'レース区分', 'status']], 
+    #     on=['種目', '種別', 'レース区分'], 
+    #     how='left'
+    # )
+    # df_now_result['status'] = df_now_result['status'].fillna('未完了')
+    #df_status=df_now_result.drop_duplicates()
+    # print(df_now_result)
+    # print(df_status)
+    #df_status = df_now_result.copy()
     df_status['状況']=df_now_result['状況']
-    #df_status['type']=df_now_result['type']
+    # df_status['type']=df_now_result['type']
+    # df_status['url']=df_now_result['url']
+    #df_status=df_now_result
     #print(df_status[df_status['状況'] != "結果"])
+    
     df_peding= df_status[df_status["status"] == "未完了"]
+    print(df_peding)
     #print(df_status)
     if df_peding.empty:
         time.sleep(1)  # API制限対策のため1秒待機
@@ -109,15 +395,15 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
             cleaned_results = df_results.replace([float('inf'), float('-inf')], pd.NA)
             values=[cleaned_results.columns.tolist()] + cleaned_results.fillna('').values.tolist()
             #print(cleaned_results)
-            #print(len(cleaned_results))
-            write_to_new_sheet(
-                spreadsheet_id=spread_sheet_ID_conference,
-                sheet_name=conference_name,
-                data=values,
-                cred_dict=creds_dict,
-                num_rows=len(cleaned_results)+1,  # データがある場合のみシートを作成
-                num_cols=len(cleaned_results.columns)+1  # 列数も指定
-            )
+            # #print(len(cleaned_results))
+            # write_to_new_sheet(
+            #     spreadsheet_id=spread_sheet_ID_conference,
+            #     sheet_name=conference_name,
+            #     data=values,
+            #     cred_dict=creds_dict,
+            #     num_rows=len(cleaned_results)+1,  # データがある場合のみシートを作成
+            #     num_cols=len(cleaned_results.columns)+1  # 列数も指定
+            # )
             #print("ℹ️ すべての種目が完了しています。")
         return
     
@@ -136,8 +422,10 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
             
             url=row['url']
             # for url in urls:
+            print(url)
             #種目のURLを取得
             #print("種目のURL:", url)
+            time.sleep(2)
             event_url = urljoin(base_url, url)
             #大学名で探索して，速報を取得．
             html_event= fetch_html(event_url)
@@ -161,81 +449,98 @@ def run_real_time_v2(url, univ, spread_sheet_ID_conference, spread_sheet_ID_memb
                         df_result.at[idx, '種目'] = row['種目']
                     if '種別' in row:
                         df_result.at[idx, '種別'] = row['種別']
-                    
-                    if row['type'] == 'Relay':
-                        if '種別' in row:
-                            if '男' in str(row['種別']):
-                                name = "男子リレー"
-                            elif '女' in str(row['種別']):
-                                name = "女子リレー"
+                    print(row)
+                    if 'type' in row and row['type'] is not None:
+                        if row['type'] == 'Relay':
+                            if '種別' in row:
+                                if '男' in str(row['種別']):
+                                    name = "男子リレー"
+                                elif '女' in str(row['種別']):
+                                    name = "女子リレー"
+                                else:
+                                    name = "リレー"
+                                df_result.at[idx, '所属'] = univ
                             else:
                                 name = "リレー"
                         else:
-                            name = "リレー"
-                    else:
-                        # 氏名から全角スペースを除いた文字列でmember_listから一致するものをnameとする
+                            # 氏名から全角スペースを除いた文字列でmember_listから一致するものをnameとする
 
-                        member_list = load_member_list()
-                        player_name = parse_player_name(str(df_result.iloc[idx]['氏名']))
-                        player_name = player_name.replace('　', '').replace(' ', '')
-                        name = None
-                        for member in member_list:
-                            #print(f"比較: {player_name} vs {member.replace('　', '').replace(' ', '')}")
-                            if player_name == member.replace('　', '').replace(' ', ''):
-                                
-                                name = member
-                                break
-                        if name is None:
-                            name = parse_player_name(str(df_result.iloc[idx]['氏名']))
+                            #member_list = load_member_list()
+                            player_name = parse_player_name(str(df_result.iloc[idx]['氏名']))
+                            player_name = player_name.replace('　', '').replace(' ', '')
+                            name = None
+                            # for member in member_list:
+                            #     #print(f"比較: {player_name} vs {member.replace('　', '').replace(' ', '')}")
+                            #     if player_name == member.replace('　', '').replace(' ', ''):
+                                    
+                            #         name = member
+                            #         break
+                            if name is None:
+                                name = parse_player_name(str(df_result.iloc[idx]['氏名']))
                         
-                    add_member_list(name)
-                    add_event_list(row['種目'])
+                    #add_member_list(name)
+                    #add_event_list(row['種目'])
                     print(f"選手名: {name}, 種目: {row['種目']}")
                     #print(name)
                     time.sleep(1)  # API制限対策のため1秒待機
-                    write_to_new_sheet(
+                    time.sleep(1)  # API制限対策のため1秒待機
+                    print(df_result)
+                    print(df_result.iloc[idx])
+                    write_member_record_to_sheet(
                         spreadsheet_id=spread_sheet_ID_member,
                         sheet_name=name,
                         data=df_result.iloc[idx].to_dict(),
+                        univ_name=univ,
                         cred_dict=creds_dict
                     )
-                    #--------
-                    time.sleep(1)  # API制限対策のため1秒待機
-                    # delete_sheet(
-                    #     spreadsheet_id=spread_sheet_ID_conference,
-                    #     sheet_name=name,
-                    #     cred_dict=creds_dict
-                    # )
+                    time.sleep(1.5)  # API制限対策のため1秒待機
+                    df_all=load_sheet(
+                        spreadsheet_id=spread_sheet_ID_member,
+                        sheet_name=name,
+                        creds_dict=creds_dict
+                    )
+                    df_result_send = return_record_status(df_all,df_result.iloc[idx],univ)
+                    df_result_send['氏名']=name
+                    print(df_result_send)
+                    time.sleep(2)  # API制限対策のため1秒待機
+                    write_to_new_sheet(
+                        spreadsheet_id=spread_sheet_ID_conference,
+                        sheet_name=conference_name,
+                        data=df_result_send.to_dict(),
+                        cred_dict=creds_dict
+                    )
                     if announce_discord:    
                         if not df_result.empty:
                             # content: 各列名:値 形式で整形
                             #------
-                            process_sheet( 
-                                spreadsheet_id=spread_sheet_ID_member,
-                                sheet_name=name,
-                                creds_dict=creds_dict
-                            )
-                            df_all=load_sheet(
-                                spreadsheet_id=spread_sheet_ID_member,
-                                sheet_name=name,
-                                creds_dict=creds_dict
-                            )
-                            df_result_send = df_all[df_all['大会'] == conference_name]
-                            if not df_result_send.empty:
-                                df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
-                            else:
-                                df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
-                            print(df_result_send)
-                            # Remove columns that contain only NaN values or empty strings
-                            df_result_send = df_result_send.dropna(axis=1, how='all')
-                            df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
-                            print(df_result_send)
+                            # process_sheet( 
+                            #     spreadsheet_id=spread_sheet_ID_member,
+                            #     sheet_name=name,
+                            #     creds_dict=creds_dict
+                            # )
+                            # df_all=load_sheet(
+                            #     spreadsheet_id=spread_sheet_ID_member,
+                            #     sheet_name=name,
+                            #     creds_dict=creds_dict
+                            # )
+                            # df_result_send = df_all[df_all['大会'] == conference_name]
+                            # if not df_result_send.empty:
+                            #     df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
+                            # else:
+                            #     df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
+                            # print(df_result_send)
+                            # # Remove columns that contain only NaN values or empty strings
+                            # df_result_send = df_result_send.dropna(axis=1, how='all')
+                            # df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
+                            # print(df_result_send)
 
                             #------
                             lines = []
-                            for _, row in df_result_send.iterrows():
+                            if isinstance(df_result_send, pd.Series):
+                                df_result_send = df_result_send.to_frame().T
+                            for _, row2 in df_result_send.iterrows():
                                 for col in df_result_send.columns:
-                                    lines.append(f"{col}: {row[col]}")
+                                    lines.append(f"{col}: {row2[col]}")
                                 lines.append("")  # 行間を空ける
                             # コードブロックで囲んで Discord に送信
                             content = "```text\n" + "\n".join(lines) + "```"

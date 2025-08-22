@@ -12,21 +12,23 @@ import time
 
 
 def main():
-    creds_env = os.getenv('GOOGLE_ACCOUNT_KEY')
-    
-    if not creds_env:
-        print("❌ 環境変数 GOOGLE_SHEETS_CREDENTIALS が設定されていません。")
-        return
+    #creds_env = os.getenv('GOOGLE_ACCOUNT_KEY')
+
+    # if not creds_env:
+    #     print("❌ 環境変数 GOOGLE_SHEETS_CREDENTIALS が設定されていません。")
+    #     return
         
-    try:
-        # creds_envがすでに正しいJSON文字列の場合、そのままロード
-        creds_dict = json.loads(creds_env)
-    except json.JSONDecodeError as e:
-        print(f"❌ 認証情報のJSONデコードに失敗しました: {e}")
-        return
+    # try:
+    #     # creds_envがすでに正しいJSON文字列の場合、そのままロード
+    #     creds_dict = json.loads(creds_env)
+    # except json.JSONDecodeError as e:
+    #     print(f"❌ 認証情報のJSONデコードに失敗しました: {e}")
+    #     return
 
 
     # 認証スコープ
+    creds_dict=os.getenv("GOOGLE_ACCOUNT_KEY")
+    creds_dict = json.loads(creds_dict)
 
     scope = ['https://www.googleapis.com/auth/spreadsheets']
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -41,6 +43,8 @@ def main():
     SPREADSHEET_ID_BEST="1ODPNaPIrphI1NV8ZXI5MLM6arKjKnVa7RxounPeX9CM"
     worksheet_conference = client.open_by_key(SPREADSHEET_ID_CONFERENCE).sheet1
     worksheet_member = client.open_by_key(SPREADSHEET_ID_MEMBER).sheet1
+    
+    #cred_dict=os.getenv('GOOGLE_SHEETS_CREDENTIALS')
     
     # シートの全データ取得（2次元リスト）
     
@@ -108,13 +112,14 @@ def main():
     #         announce_discord=False
     #    )
     # for url in urls_high:
-    #     finsih_comp=run_real_time_players(
-    #         url=url,
-    #         player_names=member_high,
-    #         spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
-    #         creds_dict=creds_dict,
-    #         announce_discord=False
-    #     )
+    finsih_comp=run_real_time_v2(
+        url="https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
+        univ='大阪大',
+        spread_sheet_ID_member=SPREADSHEET_ID_MEMBER,
+        spread_sheet_ID_conference=SPREADSHEET_ID_CONFERENCE,
+        creds_dict=creds_dict,
+        announce_discord=False
+    )
 
     # member_list= load_member_list()
     # print(member_list)

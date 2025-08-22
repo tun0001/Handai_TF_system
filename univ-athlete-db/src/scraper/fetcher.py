@@ -130,7 +130,39 @@ def get_base_url(url):
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path.rsplit('/', 1)[0]}/"
     return base_url
 
-def fetch_html(url, retries=10):
+WGET_LIKE_HEADERS = {
+    "User-Agent": "Wget/1.21.4 (linux-gnu)",   # 素直にwgetを名乗る
+    "Accept": "*/*",
+    "Accept-Encoding": "identity",             # 圧縮なし（wget系に多い）
+    "Connection": "Keep-Alive",
+}
+
+session = requests.Session()
+# 再試行（接続系/一時的エラー）を強化
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+retry = Retry(
+    total=5, backoff_factor=1.0,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET", "HEAD", "OPTIONS"]
+)
+session.mount("http://", HTTPAdapter(max_retries=retry))
+session.mount("https://", HTTPAdapter(max_retries=retry))
+
+def fetch_html(url: str, sleep_range=(1.0, 2.0)) -> str:
+    print(url)
+    time.sleep(random.uniform(*sleep_range))  # 連打しない
+    r = session.get(url, headers=WGET_LIKE_HEADERS, timeout=30, allow_redirects=True)
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code} for {url}")
+    # デコードはサーバ宣言 or 自動推定
+    r.encoding = r.encoding or r.apparent_encoding
+    # 文字化け回避のため bytes→BS で meta も見る（from_encodingを明示的にNoneに）
+    soup = BeautifulSoup(r.content, "html.parser", from_encoding=None)
+    return soup.prettify()
+
+
+def fetch_html_(url, retries=10):
     """
     ウェブページのHTMLを取得する関数（改良版）
     
