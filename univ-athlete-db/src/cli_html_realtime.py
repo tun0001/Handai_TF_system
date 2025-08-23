@@ -21,8 +21,8 @@ if __name__ == "__main__":
         # "https://gold.jaic.org/kagawa/2025/2025kokusupo/kyougi.html",
         # "http://www.narariku.com/HTML/2025/2025-kyouka-kokuspo/kyougi.html",
         # "https://gold.jaic.org/jaic/icaak/record/2025/25_DOSHISHAKYOTO/kyougi.html",
-         "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
-         #"https://gold.jaic.org/jaic/icaak/record/2025/25_HANSHIN4/tt.html"
+        # "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
+        "https://gold.jaic.org/jaic/icaak/record/2025/25_HANSHIN4/tt.html"
         # "https://gold.jaic.org/jaic/icaak/record/2025/25_NISHINIHON/kyougi.html"
         # "https://gold.jaic.org/tokushima/250811/kyougi.html",
         # "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
@@ -59,6 +59,9 @@ if __name__ == "__main__":
     spread_sheet_ID_member=spread_sheet_dict["MEMBER"][0]
     spread_sheet_ID_pb=spread_sheet_dict["PB"][0]
     spread_sheet_ID_sb=spread_sheet_dict["SB"][0]
+    spread_sheet_ID_member_kobe=spread_sheet_dict["MEMBER"][1]
+    spread_sheet_ID_pb_kobe=spread_sheet_dict["PB"][1]
+    spread_sheet_ID_sb_kobe=spread_sheet_dict["SB"][1]
 
     print(spread_sheet_ID_pb)
     # #  # テスト用のダミーデータ
@@ -68,17 +71,17 @@ if __name__ == "__main__":
     # # # #run_real_time_players(url=url, player_names="大名門　里歩", spread_sheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict, announce_discord=announce_discord)
     while True:
         for url in urls:
-            run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict, creds_dict=creds_dict,announce_discord=announce_discord)
+            run_real_time_v2(url=url, spread_sheet_dict=spread_sheet_dict, creds_dict=creds_dict,announce_discord=announce_discord)
         member_sb_to_sheet(
-            spreadsheet_id_member=spread_sheet_ID_member,
-            spreadsheet_id_sb=spread_sheet_ID_sb,
+            spreadsheet_id_member=spread_sheet_ID_member_kobe,
+            spreadsheet_id_sb=spread_sheet_ID_sb_kobe,
             creds_dict=creds_dict,
             season=2025
         )
 
         member_pb_to_sheet(
-            spreadsheet_id_member=spread_sheet_ID_member,
-            spreadsheet_id_pb=spread_sheet_ID_pb,
+            spreadsheet_id_member=spread_sheet_ID_member_kobe,
+            spreadsheet_id_pb=spread_sheet_ID_pb_kobe,
             creds_dict=creds_dict
         )
 

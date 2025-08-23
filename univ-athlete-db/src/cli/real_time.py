@@ -76,6 +76,7 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
     now_result=parse_each_event_name_kaisizikoku(html)
     df_now_result = pd.DataFrame(now_result)
     df_status['状況']=df_now_result['状況']
+    print(df_status)
     df_peding= df_status[df_status["status"] == "未完了"]
     #print(df_peding)
     #print(df_status)
@@ -101,18 +102,18 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
             html_event= fetch_html(event_url)
             results=[]
             print(spread_sheet_dict['UNIV_NAME'])
-            for univ in spread_sheet_dict['UNIV_NAME']:
-                result=parse_event_detail(html_event,player_name=None,univ=univ)
+            for univ_ in spread_sheet_dict['UNIV_NAME']:
+                result=parse_event_detail(html_event,player_name=None,univ=univ_)
                 if result is not None:
                     
                     # Convert to list if result is not already a list
                     if isinstance(result, dict):
-                        result["univ"] = univ
+                        result["univ"] = univ_
                         result = [result]
                     else:
                         # If result is already a list, add univ to each item
                         for item in result:
-                            item["univ"] = univ
+                            item["univ"] = univ_
                     results.extend(result)
 
             
@@ -159,38 +160,39 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
                                     break
                             if name is None:
                                 name = parse_player_name(str(df_results.iloc[idx]['氏名']))
-                        
-                    print(f"選手名: {name}, 種目: {row['種目']}")
-                    #print(name)
-                    time.sleep(1)  # API制限対策のため1秒待機
+
+                    print(f"UNIV:{df_results.at[idx, 'univ']}選手名: {name}, 種目: {row['種目']}")
+                    # if name== "男子リレー":
+                    #     break
+                    time.sleep(2)  # API制限対策のため1秒待機
                     time.sleep(1)  # API制限対策のため1秒待機
                     print(df_results)
                     print(df_results.iloc[idx])
-                    # write_member_record_to_sheet(
-                    #     spreadsheet_id=spread_sheet_dict["MEMBER"][univ_index],
-                    #     sheet_name=name,
-                    #     data=df_results.iloc[idx].to_dict(),
-                    #     univ_name=univ,
-                    #     cred_dict=creds_dict
-                    # )
-                    # time.sleep(1.5)  # API制限対策のため1秒待機
-                    # df_all=load_sheet(
-                    #     spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
-                    #     sheet_name=name,
-                    #     creds_dict=creds_dict
-                    # )
-                    # df_result_send = return_record_status(df_all, df_results.iloc[idx], univ)
-                    # df_result_send['氏名'] = name
-                    # print(df_result_send)
-                    # time.sleep(2)  # API制限対策のため1秒待機
-                    # write_to_new_sheet(
-                    #     spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
-                    #     sheet_name=conference_name,
-                    #     data=df_result_send.to_dict(),
-                    #     cred_dict=creds_dict
-                    # )
+                    write_member_record_to_sheet(
+                        spreadsheet_id=spread_sheet_dict["MEMBER"][univ_index],
+                        sheet_name=name,
+                        data=df_results.iloc[idx].to_dict(),
+                        univ_name=df_results.at[idx, 'univ'],
+                        cred_dict=creds_dict
+                    )
+                    time.sleep(2)  # API制限対策のため1秒待機
+                    df_all=load_sheet(
+                        spreadsheet_id=spread_sheet_dict["MEMBER"][univ_index],
+                        sheet_name=name,
+                        creds_dict=creds_dict
+                    )
+                    df_result_send = return_record_status(df_all, df_results.iloc[idx], df_results.at[idx, 'univ'])
+                    df_result_send['氏名'] = name
+                    print(df_result_send)
+                    time.sleep(2)  # API制限対策のため1秒待機
+                    write_to_new_sheet(
+                        spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
+                        sheet_name=conference_name,
+                        data=df_result_send.to_dict(),
+                        cred_dict=creds_dict
+                    )
                     if announce_discord:    
-                        if not df_result.empty and df_results.at[idx, 'univ']=="大阪大":
+                        if not df_results.empty and df_results.at[idx, 'univ']=="大阪大":
                             # content: 各列名:値 形式で整形
                             #------
                             # process_sheet( 
@@ -251,7 +253,7 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
                     # )
             df_status.at[index, "status"] = "完了"
             df_status.to_json(str(status_path), orient="records", lines=True)
-            df_results.to_json(str(results_path), orient="records", lines=True)
+            #df_results.to_json(str(results_path), orient="records", lines=True)
 
 
     # ─── Discord へ結果をポスト ─────────────────────────────────────

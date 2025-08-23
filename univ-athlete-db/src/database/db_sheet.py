@@ -414,6 +414,8 @@ def write_member_record_to_sheet(
         cred_dict=cred_dict
     )
     time.sleep(1)
+    print(sheet_name)
+    #if sheet_name != "男子リレー":
 
     process_sheet(
         spreadsheet_id=spreadsheet_id,
@@ -660,6 +662,10 @@ def member_sb_to_sheet(
         sheet_name="member_sb_all",
         creds_dict=creds_dict
     )
+    
+    # Handle case where load_sheet returns None
+    if df_sb_pre is None:
+        df_sb_pre = pd.DataFrame()
 
     member_list = load_sheet(
         spreadsheet_id=spreadsheet_id_member,
@@ -1855,15 +1861,15 @@ def return_record_status(df_all: pd.DataFrame,df_record: pd.Series,univ_name: st
         # その他の型の場合、空のDataFrameを作成
         df_record = pd.DataFrame()
     df_record=process_df(df_record,univ_name)
-    if not df_all.empty and not df_record.empty:
+    if df_all is not None and not df_all.empty and not df_record.empty:
         # df_recordの最初の行と一致する行をdf_allから探す
         match_found = False
         match_index = 0
         
         for i, row in df_all.iterrows():
             # 主要なカラムで一致を確認（例：氏名、日付、記録など）
-            match_cols = ['大会','event','ラウンド'] if all(col in df_all.columns and col in df_record.columns for col in ['大会', '記録(公認)', 'event','ラウンド']) else df_all.columns.intersection(df_record.columns)
-            
+            match_cols = ['日付','大会','event','ラウンド'] if all(col in df_all.columns and col in df_record.columns for col in ['日付','大会','event','ラウンド']) else df_all.columns.intersection(df_record.columns)
+            print(match_cols)
 
             if len(match_cols) > 0 and not df_record.empty:
                 # df_recordの最初の行と比較
