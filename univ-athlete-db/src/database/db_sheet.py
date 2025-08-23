@@ -668,7 +668,8 @@ def member_sb_to_sheet(
     )[['member_name', 'Active']]
     member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
     print(member_list_active)
-    
+
+    event_list_active = []
     for member in member_list_active:
         try:
             member_sheet = member_sheets.worksheet(member)
@@ -712,7 +713,9 @@ def member_sb_to_sheet(
                 df_event = df_event[df_event['SB'] != ""]
                 if not df_event.empty:
                     df_sb = pd.concat([df_sb, df_event], ignore_index=True)
-    
+        event_list_active.extend(event_list)
+    # event_list_activeの重複を削除
+    event_list_active = list(set(event_list_active))
     if df_sb.empty:
         print(f"No SB records found for year {season}")
         return
@@ -809,7 +812,8 @@ def member_sb_to_sheet(
             "十種競技", "七種競技",
             "ハーフマラソン", "フルマラソン"
         ]
-    for event in event_list:
+    print(event_list_active)
+    for event in event_list_active:
         for gender in genders:
             # 該当する種目・性別のデータを抽出
             event_gender_data = df_sb[(df_sb['event'] == event) & (df_sb['gender'] == gender)]
@@ -930,7 +934,7 @@ def member_pb_to_sheet(
     )[['member_name', 'Active']]
     member_list_active = member_list[member_list['Active'] == 'Active']['member_name'].tolist()
     print(member_list_active)
-    
+    event_list_active = []
     for member in member_list_active:
         try:
             member_sheet = member_sheets.worksheet(member)
@@ -958,17 +962,9 @@ def member_pb_to_sheet(
                 print(f"Skipping member {member}: No event information found")
                 continue
         
-        #event_list = df_member['event'].unique()
-        event_list=[
-            "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
-            "5000mW", "10000mW","10kmW", "20kmW", "50kmW",
-            "110mH", "100mH", "300mH", "400mH", "3000mSC",
-            "4x100mR", "4x400mR", "4x200mR", "4x800mR",
-            "走高跳", "走幅跳", "三段跳", "棒高跳",
-            "砲丸投", "円盤投", "ハンマー投", "やり投",
-            "十種競技", "七種競技",
-            "ハーフマラソン", "フルマラソン"
-        ]
+        event_list = df_member['event'].unique()
+        event_list_active.extend(event_list)
+        
         # 同じeventにPBとPB_highがある場合、PB_highを削除する
         for event in event_list:
             event_mask = df_member['event'] == event
@@ -989,7 +985,8 @@ def member_pb_to_sheet(
                 df_event = df_event[df_event['PB'] != ""]
                 if not df_event.empty:
                     df_pb = pd.concat([df_pb, df_event], ignore_index=True)
-    
+    # event_list_activeの重複を削除
+    event_list_active = list(set(event_list_active))
     if df_pb.empty:
         print("No PB records found")
         return
@@ -1020,13 +1017,23 @@ def member_pb_to_sheet(
     pivot_records['gender'] = pivot_records['member_name'].map(
         df_pb.drop_duplicates('member_name').set_index('member_name')['gender']
     ).fillna('不明')
+    event_list_all=[
+            "100m", "200m", "300m", "400m", "800m", "1500m", "3000m", "5000m", "10000m",
+            "5000mW", "10000mW","10kmW", "20kmW", "50kmW",
+            "110mH", "100mH", "300mH", "400mH", "3000mSC",
+            "4x100mR", "4x400mR", "4x200mR", "4x800mR",
+            "走高跳", "走幅跳", "三段跳", "棒高跳",
+            "砲丸投", "円盤投", "ハンマー投", "やり投",
+            "十種競技", "七種競技",
+            "ハーフマラソン", "フルマラソン"
+        ]
 
     # For each unique member and event, extract PB records with their wind and year info
     for member in df_pb['member_name'].unique():
         member_data = df_pb[df_pb['member_name'] == member]
         print(f"Processing member: {member} for PB records")
         
-        for event in event_list:
+        for event in event_list_all:
             event_data = member_data[member_data['event'] == event]
             
             # Get rows with PB
@@ -1067,7 +1074,7 @@ def member_pb_to_sheet(
     )
     df_pb_all= df_pb.copy()
     df_pb_all['post_title'] = df_pb_all['member_name'].str.replace('　', '', regex=False)
-    df_pb_all = reorder_by_event(df_pb_all)
+    #df_pb_all = reorder_by_event(df_pb_all)
     overwrite_sheet(
         spreadsheet_id=spreadsheet_id_pb,
         sheet_name="member_pb_all",
@@ -1080,7 +1087,7 @@ def member_pb_to_sheet(
     genders = df_pb['gender'].unique()
     
     
-    for event in events:
+    for event in event_list_active:
         for gender in genders:
             # 該当する種目・性別のデータを抽出
             event_gender_data = df_pb[(df_pb['event'] == event) & (df_pb['gender'] == gender)]

@@ -11,8 +11,8 @@ CONTAINER_NAME="handai-tf-container"
 # ソースディレクトリとデータベースディレクトリのマウント
 SRC_DIR="$(pwd)/../univ-athlete-db/src"
 DB_DIR="$(pwd)/../univ-athlete-db/database"  # データベースディレクトリ
-CONTAINER_SRC_DIR="/univ-athlete-db/src"
-CONTAINER_DB_DIR="/univ-athlete-db/database"  # コンテナ内のデータベースディレクトリ
+CONTAINER_SRC_DIR="/app/univ-athlete-db/src"
+CONTAINER_DB_DIR="/app/univ-athlete-db/database"  # コンテナ内のデータベースディレクトリ
 
 echo "Starting Docker container: ${CONTAINER_NAME}..."
 echo "Mounting source directory: ${SRC_DIR} -> ${CONTAINER_SRC_DIR}"
@@ -38,9 +38,10 @@ fi
 docker run --rm -it \
     --dns=8.8.8.8 \
     --name ${CONTAINER_NAME} \
-    -e GOOGLE_ACCOUNT_KEY="${GOOGLE_ACCOUNT_KEY}" \
+    -e GOOGLE_ACOUNT_KEY_SHEET_TF="${GOOGLE_ACOUNT_KEY_SHEET_TF}" \
     -e DISCORD_CHANNEL_ID="${DISCORD_CHANNEL_ID}" \
     -e DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN}" \
+    -e SPREAD_SHEET_UNIVS="${SPREAD_SHEET_UNIVS}" \
     -v ${SRC_DIR}:${CONTAINER_SRC_DIR} \
     -v ${DB_DIR}:${CONTAINER_DB_DIR} \
     ${IMAGE_NAME}:${TAG} "$@"

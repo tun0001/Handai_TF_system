@@ -80,15 +80,15 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
     #print(df_peding)
     #print(df_status)
     if df_peding.empty:
-        time.sleep(1)  # API制限対策のため1秒待機
-        if check_sheet_exists(
-            spreadsheet_id=spread_sheet_ID_conference,
-            sheet_name=conference_name,
-            cred_dict=creds_dict
-        ):
-            print("ℹ️ すでにすべての種目が完了しています。")
-        else:
-            print("?")
+        # time.sleep(1)  # API制限対策のため1秒待機
+        # if check_sheet_exists(
+        #     spreadsheet_id=spread_sheet_ID_conference,
+        #     sheet_name=conference_name,
+        #     cred_dict=creds_dict
+        # ):
+        #     print("ℹ️ すでにすべての種目が完了しています。")
+        # else:
+        #     print("?")
         return
     
     
@@ -166,29 +166,29 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True):
                     time.sleep(1)  # API制限対策のため1秒待機
                     print(df_results)
                     print(df_results.iloc[idx])
-                    write_member_record_to_sheet(
-                        spreadsheet_id=spread_sheet_dict["MEMBER"][univ_index],
-                        sheet_name=name,
-                        data=df_results.iloc[idx].to_dict(),
-                        univ_name=univ,
-                        cred_dict=creds_dict
-                    )
-                    time.sleep(1.5)  # API制限対策のため1秒待機
-                    df_all=load_sheet(
-                        spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
-                        sheet_name=name,
-                        creds_dict=creds_dict
-                    )
-                    df_result_send = return_record_status(df_all, df_results.iloc[idx], univ)
-                    df_result_send['氏名'] = name
-                    print(df_result_send)
-                    time.sleep(2)  # API制限対策のため1秒待機
-                    write_to_new_sheet(
-                        spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
-                        sheet_name=conference_name,
-                        data=df_result_send.to_dict(),
-                        cred_dict=creds_dict
-                    )
+                    # write_member_record_to_sheet(
+                    #     spreadsheet_id=spread_sheet_dict["MEMBER"][univ_index],
+                    #     sheet_name=name,
+                    #     data=df_results.iloc[idx].to_dict(),
+                    #     univ_name=univ,
+                    #     cred_dict=creds_dict
+                    # )
+                    # time.sleep(1.5)  # API制限対策のため1秒待機
+                    # df_all=load_sheet(
+                    #     spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
+                    #     sheet_name=name,
+                    #     creds_dict=creds_dict
+                    # )
+                    # df_result_send = return_record_status(df_all, df_results.iloc[idx], univ)
+                    # df_result_send['氏名'] = name
+                    # print(df_result_send)
+                    # time.sleep(2)  # API制限対策のため1秒待機
+                    # write_to_new_sheet(
+                    #     spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
+                    #     sheet_name=conference_name,
+                    #     data=df_result_send.to_dict(),
+                    #     cred_dict=creds_dict
+                    # )
                     if announce_discord:    
                         if not df_result.empty and df_results.at[idx, 'univ']=="大阪大":
                             # content: 各列名:値 形式で整形
