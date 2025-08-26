@@ -10,6 +10,8 @@ if __name__ == "__main__":
     #url="https://tsriku.stars.ne.jp/htmlR6/240727/shtml/TimeTable.html"
     #url="http://nagoyatf.xyz/chita2/nans21v/shtml/TimeTable.html"
     #url="https://gold.jaic.org/jaic/icaak/record/2025/25_SANSHOSEN/kyougi.html"
+    url_list=load_com_urls()
+    print(url_list)
     urls={
         #"https://gold.jaic.org/icaak/record/2024/24_%E9%98%AA%E7%A5%9E%E5%9B%9B%E5%A4%A7/kyougi.html",
         #"http://www.narariku.com/HTML/2024/kyouka/long1/kyougi.html",
@@ -21,9 +23,12 @@ if __name__ == "__main__":
         # "https://gold.jaic.org/kagawa/2025/2025kokusupo/kyougi.html",
         # "http://www.narariku.com/HTML/2025/2025-kyouka-kokuspo/kyougi.html",
         # "https://gold.jaic.org/jaic/icaak/record/2025/25_DOSHISHAKYOTO/kyougi.html",
-        # "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
-        "https://gold.jaic.org/jaic/icaak/record/2025/25_HANSHIN4/tt.html"
-        # "https://gold.jaic.org/jaic/icaak/record/2025/25_NISHINIHON/kyougi.html"
+        # # "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
+        # "https://gold.jaic.org/jaic/icaak/record/2025/25_HANSHIN4/tt.html",
+        # "https://gold.jaic.org/jaic/icaak/record/2025/25_NISHINIHON/kyougi.html",
+        "http://npo-kochi.sports.coocan.jp/taikaikekka/25/08shikokusenshuken/kyougi.html",
+        #"http://www.haaa.jp/2021/hyo/web/kyougi.html",
+        #"https://iuau.jp/ev2021/90ic/res/kyougi.html"
         # "https://gold.jaic.org/tokushima/250811/kyougi.html",
         # "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
         # #"http://npo-kochi.sports.coocan.jp/taikaikekka/23/07kokutaiU16/kyougi.html",
@@ -53,7 +58,7 @@ if __name__ == "__main__":
     print(spread_sheet_dict)
     spread_sheet_dict = json.loads(spread_sheet_dict)
     spread_sheet_dict = pd.DataFrame(spread_sheet_dict).to_dict(orient='list')
-    announce_discord = False
+    announce_discord = True
     print(spread_sheet_dict)
 
     spread_sheet_ID_member=spread_sheet_dict["MEMBER"][0]
@@ -62,30 +67,52 @@ if __name__ == "__main__":
     spread_sheet_ID_member_kobe=spread_sheet_dict["MEMBER"][1]
     spread_sheet_ID_pb_kobe=spread_sheet_dict["PB"][1]
     spread_sheet_ID_sb_kobe=spread_sheet_dict["SB"][1]
+    spread_sheet_dict_kobe = {
+        "UNIV_NAME": [spread_sheet_dict["UNIV_NAME"][1]],
+        "CONFERENCE": [spread_sheet_dict["CONFERENCE"][1]],
+        "MEMBER": [spread_sheet_dict["MEMBER"][1]],
+        "PB": [spread_sheet_dict["PB"][1]],
+        "SB": [spread_sheet_dict["SB"][1]]
+    }
+    print(spread_sheet_dict_kobe)
 
     print(spread_sheet_ID_pb)
     # #  # テスト用のダミーデータ
     # # name="川﨑　雄介"
     
 
-    # # # #run_real_time_players(url=url, player_names="大名門　里歩", spread_sheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict, announce_discord=announce_discord)
-    while True:
-        for url in urls:
-            run_real_time_v2(url=url, spread_sheet_dict=spread_sheet_dict, creds_dict=creds_dict,announce_discord=announce_discord)
-        member_sb_to_sheet(
-            spreadsheet_id_member=spread_sheet_ID_member_kobe,
-            spreadsheet_id_sb=spread_sheet_ID_sb_kobe,
-            creds_dict=creds_dict,
-            season=2025
-        )
 
-        member_pb_to_sheet(
-            spreadsheet_id_member=spread_sheet_ID_member_kobe,
-            spreadsheet_id_pb=spread_sheet_ID_pb_kobe,
+    # # # #run_real_time_players(url=url, player_names="大名門　里歩", spread_sheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict, announce_discord=announce_discord)
+    train=False
+    member_list=load_member_list(spreadsheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict)
+    print(member_list)
+    for member in member_list:
+        time.sleep(3)
+        process_sheet(
+            spreadsheet_id=spread_sheet_ID_member,
+            sheet_name=member,
             creds_dict=creds_dict
         )
+    # # while True:
+    # for url in urls:
+    #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+    # # # for url in url_list[1:30]:
+    # # #     print(url)
+    # #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+    member_sb_to_sheet(
+        spreadsheet_id_member=spread_sheet_ID_member,
+        spreadsheet_id_sb=spread_sheet_ID_sb,
+        creds_dict=creds_dict,
+        season=2025
+    )
+
+    member_pb_to_sheet(
+        spreadsheet_id_member=spread_sheet_ID_member,
+        spreadsheet_id_pb=spread_sheet_ID_pb,
+        creds_dict=creds_dict
+    )
 
 
-        
-        # 30分（1800秒）待機
-        time.sleep(1800)
+    
+    # # 30分（1800秒）待機
+    # time.sleep(1800)

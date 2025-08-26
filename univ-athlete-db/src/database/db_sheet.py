@@ -415,7 +415,7 @@ def write_member_record_to_sheet(
     )
     time.sleep(1)
     print(sheet_name)
-    #if sheet_name != "男子リレー":
+
 
     process_sheet(
         spreadsheet_id=spreadsheet_id,
@@ -970,7 +970,8 @@ def member_pb_to_sheet(
         
         event_list = df_member['event'].unique()
         event_list_active.extend(event_list)
-        
+        last_season = df_member['season'].max()
+
         # 同じeventにPBとPB_highがある場合、PB_highを削除する
         for event in event_list:
             event_mask = df_member['event'] == event
@@ -990,6 +991,7 @@ def member_pb_to_sheet(
             if 'PB' in df_event.columns:
                 df_event = df_event[df_event['PB'] != ""]
                 if not df_event.empty:
+                    df_event["last_season"]=last_season
                     df_pb = pd.concat([df_pb, df_event], ignore_index=True)
     # event_list_activeの重複を削除
     event_list_active = list(set(event_list_active))
@@ -1019,6 +1021,10 @@ def member_pb_to_sheet(
     pivot_records = pd.DataFrame({
         'member_name': df_pb['member_name'].unique()
     })
+    # Add last_season by mapping the max last_season for each member
+    pivot_records['last_season'] = pivot_records['member_name'].map(
+        df_pb.groupby('member_name')['last_season'].max()
+    )
     # Add gender column aligned with member_name
     pivot_records['gender'] = pivot_records['member_name'].map(
         df_pb.drop_duplicates('member_name').set_index('member_name')['gender']
@@ -1061,6 +1067,8 @@ def member_pb_to_sheet(
     df_pb_records = pivot_records
     # Insert the Active column as the 3rd column (index 2)
     active_column = pd.Series("Non-Active", index=df_pb_records.index, name="Active")
+    # Sort by last_season in descending order
+    df_pb_records = df_pb_records.sort_values('last_season', ascending=False)
     df_pb_records.insert(2, "Active", active_column)
     
     
@@ -1563,14 +1571,16 @@ def extract_record(record):
     m = re.search(r'(\d+:\d+:\d+)', record)
     if m:
         return m.group(1)
-    # 次に 52:10 のような分:秒形式を追加
-    m = re.search(r'(\d+:\d+)', record)
-    if m:
-        return m.group(1)
+    
     # 次に 1:00.37 のような形式を優先
     m = re.search(r'(\d+:\d+\.\d+)', record)
     if m:
         return m.group(1)
+    # 次に 52:10 のような分:秒形式を追加
+    m = re.search(r'(\d+:\d+)', record)
+    if m:
+        return m.group(1)
+    
     # 15.20[44.4] のような場合は [ の前の値を優先
     m = re.match(r'^([0-9.]+)\[', record)
     if m:
