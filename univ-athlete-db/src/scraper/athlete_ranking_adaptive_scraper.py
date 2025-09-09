@@ -233,8 +233,9 @@ def get_event_results(session, gid, event_name, event_code):
             response = session.post(api_url, data=data, headers=headers, timeout=30)
             response.raise_for_status()
             response.encoding = response.apparent_encoding
-            #print(response.encoding)
+            print(response.encoding)
             forbit_code_list={
+                "windows-1250",
                 "iso8859_13",
                 "CP949",
                 "big5hkscs",

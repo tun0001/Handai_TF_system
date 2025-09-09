@@ -1,6 +1,7 @@
 import os
 import json
 from cli.real_time import *
+from cli.real_time_athlete import *
 import pandas as pd
 import time
 
@@ -26,19 +27,28 @@ if __name__ == "__main__":
         # # "https://gold.jaic.org/jaic/icaak/record/2025/8_GK1/kyougi.html",
         # "https://gold.jaic.org/jaic/icaak/record/2025/25_HANSHIN4/tt.html",
         # "https://gold.jaic.org/jaic/icaak/record/2025/25_NISHINIHON/kyougi.html",
-        "http://npo-kochi.sports.coocan.jp/taikaikekka/25/08shikokusenshuken/kyougi.html",
+        # "http://npo-kochi.sports.coocan.jp/taikaikekka/25/08shikokusenshuken/kyougi.html",
+        #"https://gold.jaic.org/icaak/record/2025/4_KSIC/kyougi.html"
         #"http://www.haaa.jp/2021/hyo/web/kyougi.html",
         #"https://iuau.jp/ev2021/90ic/res/kyougi.html"
         # "https://gold.jaic.org/tokushima/250811/kyougi.html",
         # "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
         # #"http://npo-kochi.sports.coocan.jp/taikaikekka/23/07kokutaiU16/kyougi.html",
-        # "https://gold.jaic.org/jaic/icaak/record/2025/7_1stLONG/kyougi.html",
-        #"https://gold.jaic.org/jaic/member/kagosima/2025/result/ishigaku2/kyougi.html"
+        # # "https://gold.jaic.org/jaic/icaak/record/2025/7_1stLONG/kyougi.html",
+        # #"https://gold.jaic.org/jaic/member/kagosima/2025/result/ishigaku2/kyougi.html"
+        # "http://www.haaa.jp/2025/hyo/web/kyougi.html",
+        # "https://gold.jaic.org/icaak/record/2024/24_KEIHANSHIN/kyougi.html",
+        # "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
+        "https://gold.jaic.org/icaak/record/2025/25_SANSHOSEN/tt.html"
 
         }
     url= "https://www.ui-techno.jp/kanjitsu/game/r_23/kirokukai/kyougi.html"
     #山中　一凛
-    #山中　一凜
+    #山中　一凜or url in urls:
+        #run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+    # # for url in url_list[1:30]:
+    # #     print(url)
+    #     run_real_tim
     #TimeTable.htmlじゃないとむり
     # spread_sheet_ID_OSAKA=os.getenv("SPREAD_SHEET_ID_OSAKA")
     # spread_sheet_ID_OSAKA = json.loads(spread_sheet_ID_OSAKA)
@@ -58,7 +68,7 @@ if __name__ == "__main__":
     print(spread_sheet_dict)
     spread_sheet_dict = json.loads(spread_sheet_dict)
     spread_sheet_dict = pd.DataFrame(spread_sheet_dict).to_dict(orient='list')
-    announce_discord = True
+    announce_discord = False
     print(spread_sheet_dict)
 
     spread_sheet_ID_member=spread_sheet_dict["MEMBER"][0]
@@ -83,32 +93,40 @@ if __name__ == "__main__":
 
 
     # # # #run_real_time_players(url=url, player_names="大名門　里歩", spread_sheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict, announce_discord=announce_discord)
-    train=False
-    member_list=load_member_list(spreadsheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict)
-    print(member_list)
-    for member in member_list:
-        time.sleep(3)
-        process_sheet(
-            spreadsheet_id=spread_sheet_ID_member,
-            sheet_name=member,
-            creds_dict=creds_dict
-        )
-    # # while True:
+    train=True
+    # member_list=load_member_list(spreadsheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict)
+    # print(member_list)
+    # for member in member_list:
+    #     time.sleep(3)
+    #     process_sheet(
+    #         spreadsheet_id=spread_sheet_ID_member,
+    #         sheet_name=member,
+    #         creds_dict=creds_dict
+    #     )
+    # # # # while True:
     # for url in urls:
-    #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+    #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
     # # # for url in url_list[1:30]:
-    # # #     print(url)
-    # #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+    # #     print(url)
+    #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+    url="https://games.athleteranking.com/gamedata.php?gid=zha12024024"
+    run_real_time_athlete(url=url, 
+                          univ=spread_sheet_dict_kobe["UNIV_NAME"][0],
+                          spread_sheet_ID_conference=spread_sheet_dict_kobe["CONFERENCE"][0],
+                          spread_sheet_ID_member=spread_sheet_dict_kobe["MEMBER"][0],
+                          creds_dict=creds_dict, announce_discord=announce_discord)
+
+
     member_sb_to_sheet(
-        spreadsheet_id_member=spread_sheet_ID_member,
-        spreadsheet_id_sb=spread_sheet_ID_sb,
+        spreadsheet_id_member=spread_sheet_ID_member_kobe,
+        spreadsheet_id_sb=spread_sheet_ID_sb_kobe,
         creds_dict=creds_dict,
         season=2025
     )
 
     member_pb_to_sheet(
-        spreadsheet_id_member=spread_sheet_ID_member,
-        spreadsheet_id_pb=spread_sheet_ID_pb,
+        spreadsheet_id_member=spread_sheet_ID_member_kobe,
+        spreadsheet_id_pb=spread_sheet_ID_pb_kobe,
         creds_dict=creds_dict
     )
 

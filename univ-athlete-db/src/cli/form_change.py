@@ -19,10 +19,14 @@ import asyncio
 from discord_poster import send_to_thread
 import time
 
-def run_form_change(spread_sheet_ID_member, spread_sheet_ID_form, creds_dict):
+def run_form_change(spread_sheet_ID_dict, creds_dict):
     """
     Formの変更を行う関数
     """
+    spread_sheet_ID_member = spread_sheet_ID_dict["MEMBER"][0]
+    spread_sheet_ID_form = spread_sheet_ID_dict["FORM"][0]
+    univ_name=spread_sheet_ID_dict["UNIV_NAME"][0]
+
     # Google Sheets APIの認証
     gc = gspread.service_account_from_dict(creds_dict)
     
@@ -53,6 +57,10 @@ def run_form_change(spread_sheet_ID_member, spread_sheet_ID_form, creds_dict):
     # 例: メンバーシートからデータを取得してフォームシートに書き込む
     #print(df_results)
     for index, df_result in df_results.iterrows():
+        if not df_result['氏名'] or df_result['氏名'].strip() == '':
+            # 先頭行を削除して次へ
+            worksheet_form.delete_rows(2)  # 2行目（ヘッダーの次）を削除
+            continue
         df_result['競技']=df_result['種別']+ df_result['種目']
         event_name = df_result['種目']
 
@@ -85,20 +93,20 @@ def run_form_change(spread_sheet_ID_member, spread_sheet_ID_form, creds_dict):
         else:
             player_name = parse_player_name(str(df_result['氏名']))
             name = player_name
-            add_member_list(name)
+            #add_member_list(name)
         
         print(f"選手名: {name}, 種目: {event_name}, 種別: {event_type}")
         #print(df_result)
-        time.sleep(1)  # API制限対策のため1秒待機
+        time.sleep(2)  # API制限対策のため1秒待機
         #print(df_result['完了'])
         write_member_record_to_sheet(
             spreadsheet_id=spread_sheet_ID_member,
             sheet_name=name,
             data=df_result.to_dict(),  # Seriesを辞書に変換
             cred_dict=creds_dict,
-            univ_name=df_result['所属']
+            univ_name=univ_name
         )
-        time.sleep(1)  # API制限対策のため1秒待機
+        time.sleep(2)  # API制限対策のため1秒待機
         write_to_new_sheet( 
             spreadsheet_id=spread_sheet_ID_form,
         

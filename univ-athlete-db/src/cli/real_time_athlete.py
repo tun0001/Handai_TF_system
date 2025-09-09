@@ -224,7 +224,8 @@ def run_real_time_athlete(url, univ, spread_sheet_ID_conference, spread_sheet_ID
             spreadsheet_id=spread_sheet_ID_member,
             sheet_name=name,
             data=df_result.to_dict(),
-            cred_dict=creds_dict
+            cred_dict=creds_dict,
+            univ_name=univ
         )
         time.sleep(1.5)  # API制限対策のため1秒待機
         # df_all=load_sheet(
