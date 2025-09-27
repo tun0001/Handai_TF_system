@@ -80,8 +80,31 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True,t
     #----------------------------------------------------
     now_result=parse_each_event_name_kaisizikoku(html)
     df_now_result = pd.DataFrame(now_result)
+    #----------------------------------------------
+    #西日本インカレは9/11には173項目だが，うまくいくのか？
     df_status['状況']=df_now_result['状況']
-    print(df_status)
+    # df_now_resultにstatusカラムがない場合は追加
+    if 'status' not in df_now_result.columns:
+        df_now_result['status'] = '未完了'
+
+    # df_statusとdf_now_resultをマージしてstatusを更新
+    # キーカラムを特定（'url'がユニークキーと仮定）
+    merge_columns = ['url'] if 'url' in df_status.columns and 'url' in df_now_result.columns else df_status.columns.intersection(df_now_result.columns).difference(['状況', 'status']).tolist()
+
+    if merge_columns:
+        # df_statusからstatusのみを取得してマージ
+        df_status_info = df_status[merge_columns + ['status']].drop_duplicates()
+        df_now_result = df_now_result.drop(columns=['status'], errors='ignore')
+        df_now_result = df_now_result.merge(df_status_info, on=merge_columns, how='left')
+        
+        # マージで見つからなかった行のstatusを"未完了"に設定
+        df_now_result['status'] = df_now_result['status'].fillna('未完了')
+
+    # df_statusを更新
+    df_status = df_now_result.copy()
+    
+    #---------------------------------------------
+    print(df_status.iloc[40:50])
     df_peding= df_status[df_status["status"] == "未完了"]
     #print(df_peding)
     #print(df_status)
@@ -191,7 +214,7 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True,t
                         df_result_send = return_record_status(df_all, df_results.iloc[idx], df_results.at[idx, 'univ'])
                         df_result_send['氏名'] = name
                         print(df_result_send)
-                        time.sleep(2)  # API制限対策のため1秒待機
+                        time.sleep(3)  # API制限対策のため1秒待機
                         write_to_new_sheet(
                             spreadsheet_id=spread_sheet_dict["CONFERENCE"][univ_index],
                             sheet_name=conference_name,
@@ -200,30 +223,6 @@ def run_real_time_v3(url, spread_sheet_dict, creds_dict, announce_discord=True,t
                         )
                     if announce_discord:    
                         if not df_results.empty and df_results.at[idx, 'univ']=="大阪大":
-                            # content: 各列名:値 形式で整形
-                            #------
-                            # process_sheet( 
-                            #     spreadsheet_id=spread_sheet_ID_member,
-                            #     sheet_name=name,
-                            #     creds_dict=creds_dict
-                            # )
-                            # df_all=load_sheet(
-                            #     spreadsheet_id=spread_sheet_ID_member,
-                            #     sheet_name=name,
-                            #     creds_dict=creds_dict
-                            # )
-                            # df_result_send = df_all[df_all['大会'] == conference_name]
-                            # if not df_result_send.empty:
-                            #     df_result_send = df_result_send.iloc[[-1]]  # Get the last row as a dataframe
-                            # else:
-                            #     df_result_send = df_all.iloc[[-1]]  # Fallback to the last row of the original dataframe
-                            # print(df_result_send)
-                            # # Remove columns that contain only NaN values or empty strings
-                            # df_result_send = df_result_send.dropna(axis=1, how='all')
-                            # df_result_send = df_result_send.loc[:, ~(df_result_send == '').all()]
-                            # print(df_result_send)
-
-                            #------
                             lines = []
                             if isinstance(df_result_send, pd.Series):
                                 df_result_send = df_result_send.to_frame().T

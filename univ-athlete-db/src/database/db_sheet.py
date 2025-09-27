@@ -1271,6 +1271,24 @@ def sort_dataframe_by_date(df: pd.DataFrame) -> pd.DataFrame:
     df['年'] = pd.to_numeric(df['年'], errors='coerce').fillna(0).astype(int)
     df['月'] = pd.to_numeric(df['月'], errors='coerce').fillna(0).astype(int)
     df['日'] = pd.to_numeric(df['日'], errors='coerce').fillna(0).astype(int)
+    # 年、月、日のカラムからdateカラムを作成
+    if all(col in df.columns for col in ['年', '月', '日']):
+        try:
+            # 年、月、日を結合してdateカラムを作成
+            df['date'] = (
+                df['年'].astype(str) + '-' + 
+                df['月'].astype(str).str.zfill(2) + '-' + 
+                df['日'].astype(str).str.zfill(2)
+            )
+        except Exception as e:
+            print(f"日付の変換に失敗しました: {e}")
+            # エラーの場合は文字列結合で試行
+            df['date'] = pd.to_date(
+                df['年'].astype(str) + '-' + 
+                df['月'].astype(str).str.zfill(2) + '-' + 
+                df['日'].astype(str).str.zfill(2), 
+                errors='coerce'
+            )
     # Sort the DataFrame by date components
     df_sorted = df.sort_values(by=['年', '月', '日'], ascending=True)
     return df_sorted
@@ -1398,8 +1416,8 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
                 event_name_2 = str(event_name_2)
             if isinstance(event_name_1, int):
                 event_name_1 = str(event_name_1)
-            # event_name_2優先、なければevent_name_1
-            event_name = event_name_2 if event_name_2 else event_name_1
+            # event_name_1とevent_name_2を組み合わせる
+            event_name = str(event_name_1) + str(event_name_2) if event_name_2 else str(event_name_1)
             #print(event_name)
             # 全角→半角変換（数字・英字・記号）
             event_name = event_name.translate(str.maketrans(
@@ -1425,7 +1443,7 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
             event_multi_list = [
             "十種競技", "七種競技"
             ]
-            event_half_list = [
+            event_marathon_list = [
             "ハーフマラソン","フルマラソン"
             ]
 
@@ -1455,8 +1473,8 @@ def get_event_name(df: pd.DataFrame) -> pd.DataFrame:
                 for ev in event_multi_list:
                     if ev in event_name_1:
                         return ev
-            elif "Half" in type:
-                for ev in event_half_list:
+            elif "Marathon" in type:
+                for ev in event_marathon_list:
                     if ev in event_name:
                         return ev
             else:
@@ -1617,8 +1635,8 @@ def get_event_type(df: pd.DataFrame) -> pd.DataFrame:
                 event_type = 'Relay'
             elif '投' in event_name_1:
                 event_type = 'Throw'
-            elif 'ハーフ' in event_name_1:
-                event_type = 'Half'
+            elif 'マラソン' in event_name_1:
+                event_type = 'Marathon'
             elif 'h' in event_name_1 or 'H' in event_name_1 or 'ｈ' in event_name_1 or 'Ｈ' in event_name_1 or 'S' in event_name_1 or 's' in event_name_1 or 'Ｓ' in event_name_1 or 'ｓ' in event_name_1:
                 event_type = 'Hurdle'
             elif 'w' in event_name_1 or 'W' in event_name_1 or 'ｗ' in event_name_1 or 'Ｗ' in event_name_1:
@@ -1879,7 +1897,7 @@ def return_record_status(df_all: pd.DataFrame,df_record: pd.Series,univ_name: st
         for i, row in df_all.iterrows():
             # 主要なカラムで一致を確認（例：氏名、日付、記録など）
             match_cols = ['日付','大会','event','ラウンド'] if all(col in df_all.columns and col in df_record.columns for col in ['日付','大会','event','ラウンド']) else df_all.columns.intersection(df_record.columns)
-            print(match_cols)
+            #print(match_cols)
 
             if len(match_cols) > 0 and not df_record.empty:
                 # df_recordの最初の行と比較

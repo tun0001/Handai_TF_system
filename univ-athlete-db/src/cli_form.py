@@ -1,6 +1,7 @@
 import os
 import json
 from cli.form_change import *
+import time
 
 
 if __name__ == "__main__":
@@ -32,12 +33,23 @@ if __name__ == "__main__":
         "SB": [spread_sheet_dict["SB"][1]],
         "FORM": [spread_sheet_dict["FORM"][1]]
     }
-    #spread_sheet_ID_conference=os.getenv("SPREAD_SHEET_ID_CONFERENCE")
-    spread_sheet_ID_member=os.getenv("SPREAD_SHEET_ID_MEMBER")
-    spread_sheet_ID_form=os.getenv("SPREAD_SHEET_ID_FORM")
-    creds_dict=os.getenv("GOOGLE_ACOUNT_KEY_SHEET_TF")
-    creds_dict = json.loads(creds_dict)
+    # #spread_sheet_ID_conference=os.getenv("SPREAD_SHEET_ID_CONFERENCE")
+    # spread_sheet_ID_member=os.getenv("SPREAD_SHEET_ID_MEMBER")
+    # spread_sheet_ID_form=os.getenv("SPREAD_SHEET_ID_FORM")
+    # creds_dict=os.getenv("GOOGLE_ACOUNT_KEY_SHEET_TF")
+    # creds_dict = json.loads(creds_dict)
 
+    member_data=load_sheet(spreadsheet_id=spread_sheet_ID_member_kobe, sheet_name="部員一覧", creds_dict=creds_dict)
+    member_list=member_data["member_name"].dropna().tolist()
+    for member in member_list:
+        print(member)
+        time.sleep(2)
+        process_sheet(
+            spreadsheet_id=spread_sheet_ID_member_kobe,
+            sheet_name=member,
+            univ_name="神戸大",
+            creds_dict=creds_dict
+        )
     # process_sheet(
     #     spreadsheet_id=spread_sheet_ID_member_kobe,
     #     sheet_name="平尾　瑛",
@@ -52,5 +64,5 @@ if __name__ == "__main__":
     # )
     
 
-    # announce_discord = False
-    run_form_change(spread_sheet_ID_dict=spread_sheet_dict_kobe, creds_dict=creds_dict)
+    # # announce_discord = False
+    # run_form_change(spread_sheet_ID_dict=spread_sheet_dict_kobe, creds_dict=creds_dict)

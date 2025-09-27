@@ -2,8 +2,11 @@ import os
 import json
 from cli.real_time import *
 from cli.real_time_athlete import *
+from cli.real_time_spa import *
 import pandas as pd
 import time
+import schedule
+import datetime
 
 if __name__ == "__main__":
     #url= "https://jaaf-shiga.com/results/2025/0712pch/shtml/TimeTable.html"
@@ -39,10 +42,16 @@ if __name__ == "__main__":
         # "http://www.haaa.jp/2025/hyo/web/kyougi.html",
         # "https://gold.jaic.org/icaak/record/2024/24_KEIHANSHIN/kyougi.html",
         # "https://www.oaaa.jp/results/r_25/osk_champ/kyougi.html",
-        "https://gold.jaic.org/icaak/record/2025/25_SANSHOSEN/tt.html"
+        #"https://gold.jaic.org/icaak/record/2025/25_SANSHOSEN/tt.html"
+        #"https://gold.jaic.org/jaic/icaak/record/2025/7_1stLONG/kyougi.html",
+        #"https://gold.jaic.org/jaic/icaak/record/2025/9_NISHINIHON_IC/kyougi.html"
+        # "https://gold.jaic.org/jaic/icaak/record/2025/10_2ndLONG/kyougi.html",
+        # "https://higashioosakashi.boo.jp/20250920/kyougi.html"
+        "https://gold.jaic.org/jaic/icaak/record/2025/25_ISHIYAKU/kyougi.html",
+        "http://www.kirokukai.shop/sokuhou/20250923/kyougi.html"
 
         }
-    url= "https://www.ui-techno.jp/kanjitsu/game/r_23/kirokukai/kyougi.html"
+    url= "https://dp17057472.lolipop.jp/HP/0920.21/shtml/TimeTable.html"
     #山中　一凛
     #山中　一凜or url in urls:
         #run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
@@ -68,7 +77,7 @@ if __name__ == "__main__":
     print(spread_sheet_dict)
     spread_sheet_dict = json.loads(spread_sheet_dict)
     spread_sheet_dict = pd.DataFrame(spread_sheet_dict).to_dict(orient='list')
-    announce_discord = False
+    announce_discord = True
     print(spread_sheet_dict)
 
     spread_sheet_ID_member=spread_sheet_dict["MEMBER"][0]
@@ -93,7 +102,12 @@ if __name__ == "__main__":
 
 
     # # # #run_real_time_players(url=url, player_names="大名門　里歩", spread_sheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict, announce_discord=announce_discord)
-    train=True
+    train=False
+    # run_real_time_spa(url=url, 
+    #                   univ=spread_sheet_dict["UNIV_NAME"][0],
+    #                   spread_sheet_ID_conference=spread_sheet_dict["CONFERENCE"][0],
+    #                   spread_sheet_ID_member=spread_sheet_dict["MEMBER"][0],
+    #                   creds_dict=creds_dict, announce_discord=announce_discord)
     # member_list=load_member_list(spreadsheet_ID_member=spread_sheet_ID_member, creds_dict=creds_dict)
     # print(member_list)
     # for member in member_list:
@@ -109,26 +123,59 @@ if __name__ == "__main__":
     # # # for url in url_list[1:30]:
     # #     print(url)
     #     run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict_kobe, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
-    url="https://games.athleteranking.com/gamedata.php?gid=zha12024024"
-    run_real_time_athlete(url=url, 
-                          univ=spread_sheet_dict_kobe["UNIV_NAME"][0],
-                          spread_sheet_ID_conference=spread_sheet_dict_kobe["CONFERENCE"][0],
-                          spread_sheet_ID_member=spread_sheet_dict_kobe["MEMBER"][0],
-                          creds_dict=creds_dict, announce_discord=announce_discord)
+    def run_monitoring():
+        print(f"Running monitoring at {datetime.datetime.now()}")
+        for url in urls:
+            run_real_time_v3(url=url, spread_sheet_dict=spread_sheet_dict, creds_dict=creds_dict,announce_discord=announce_discord,train=train)
+        
+        member_sb_to_sheet(
+            spreadsheet_id_member=spread_sheet_ID_member,
+            spreadsheet_id_sb=spread_sheet_ID_sb,
+            creds_dict=creds_dict,
+            season=2025
+        )
+
+        member_pb_to_sheet(
+            spreadsheet_id_member=spread_sheet_ID_member,
+            spreadsheet_id_pb=spread_sheet_ID_pb,
+            creds_dict=creds_dict
+        )
+        member_sb_to_sheet(
+            spreadsheet_id_member=spread_sheet_ID_member_kobe,
+            spreadsheet_id_sb=spread_sheet_ID_sb_kobe,
+            creds_dict=creds_dict,
+            season=2025
+        )
+
+        member_pb_to_sheet(
+            spreadsheet_id_member=spread_sheet_ID_member_kobe,
+            spreadsheet_id_pb=spread_sheet_ID_pb_kobe,
+            creds_dict=creds_dict
+        )
+
+    # 9:00-19:00の間、10分おきに実行
+    while True:
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        current_hour = now.hour
+        current_minute = now.minute
+        print(f"Current time: {now}, Hour: {current_hour}, Minute: {current_minute}")
+
+        # 9:00-22:00の時間帯かつ1分の倍数の時刻の場合に実行
+        if 9 <= current_hour < 21 and current_minute % 10 == 0:
+            run_monitoring()
+            time.sleep(60)  # 1分待機して同じ時刻での重複実行を防ぐ
+        else:
+            time.sleep(60)  # 30秒ごとにチェック
+
+    # url="https://games.athleteranking.com/gamedata.php?gid=zha12024024"
+    # run_real_time_athlete(url=url, 
+    #                       univ=spread_sheet_dict_kobe["UNIV_NAME"][0],
+    #                       spread_sheet_ID_conference=spread_sheet_dict_kobe["CONFERENCE"][0],
+    #                       spread_sheet_ID_member=spread_sheet_dict_kobe["MEMBER"][0],
+    #                       creds_dict=creds_dict, announce_discord=announce_discord)
 
 
-    member_sb_to_sheet(
-        spreadsheet_id_member=spread_sheet_ID_member_kobe,
-        spreadsheet_id_sb=spread_sheet_ID_sb_kobe,
-        creds_dict=creds_dict,
-        season=2025
-    )
-
-    member_pb_to_sheet(
-        spreadsheet_id_member=spread_sheet_ID_member_kobe,
-        spreadsheet_id_pb=spread_sheet_ID_pb_kobe,
-        creds_dict=creds_dict
-    )
+   
 
 
     
